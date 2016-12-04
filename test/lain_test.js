@@ -42,10 +42,6 @@ describe('Lain', function(){
 
     var world;
 
-
-
-    describe('Data', function(){
-
         before(function(){
 
             resetLog();
@@ -58,7 +54,7 @@ describe('Lain', function(){
 
             var d = world.demandData('ergo');
             var name = d.name();
-            assert.equal('ergo', name);
+            assert.equal(name, 'ergo');
 
         });
 
@@ -68,7 +64,7 @@ describe('Lain', function(){
             d.write('proxy');
             var value = d.read();
 
-            assert.equal('proxy', value);
+            assert.equal(value, 'proxy');
 
         });
 
@@ -78,7 +74,7 @@ describe('Lain', function(){
             d.write('autoreiv');
             var value = d.read();
 
-            assert.equal('autoreiv', value);
+            assert.equal(value, 'autoreiv');
 
         });
 
@@ -88,11 +84,11 @@ describe('Lain', function(){
 
             var d = world.demandData('ergo');
             d.toggle();
-            assert.equal(false, d.read());
+            assert.equal(d.read(), false);
             d.toggle();
-            assert.equal(true, d.read());
+            assert.equal(d.read(), true);
             d.toggle();
-            assert.equal(false, d.read());
+            assert.equal(d.read(), false);
 
         });
 
@@ -104,7 +100,7 @@ describe('Lain', function(){
             d.subscribe(callback);
             d.write('Re-L');
             var value = msgLog[0];
-            assert.equal('Re-L', value);
+            assert.equal(value, 'Re-L');
 
         });
 
@@ -115,7 +111,7 @@ describe('Lain', function(){
             var d = world.demandData('ergo');
             d.refresh();
             var value = msgLog[0];
-            assert.equal('Re-L', value);
+            assert.equal(value, 'Re-L');
 
         });
 
@@ -130,63 +126,36 @@ describe('Lain', function(){
             d.write('Romdeau', 'arcology');
             d.write('wasteland');
 
-            console.log(msgLog[0]);
-            console.log(msgLog[1]);
-
             var value = msgLog[0];
             assert.equal(value, 'Romdeau');
             assert.equal(msgLog.length, 1);
 
         });
 
+        it('can monitor all topics', function(){
 
+            resetLog();
+            world.clear();
+            var d = world.demandData('ergo');
+            d.monitor(callback);
+            d.write('Vincent', 'character');
+            d.write('Re-L', 'character');
+            d.write('Romdeau', 'arcology');
+            d.write('wasteland');
 
-    });
-
-    describe('Scopes', function(){
-
-
-
-        it('finds data up the tree', function(){
-
-            var fruitTree = root.createChild('fruit');
-            fruitTree.demandData('owner').write('Scott');
-
-            var sour = fruitTree.createChild('sour');
-            var sweet = fruitTree.createChild('sweet');
-            var tart = fruitTree.createChild('tart');
-
-            var mango = sweet.createChild('mango');
-            mango.demandData('owner').write('Landon');
-
-            var ownerData = sour.findData('owner');
-            var owner = ownerData.read(); // owner at fruit level
-            assert.equal(owner, 'Scott');
-
-            sweet.demandData('owner').write('Lars');
-            sour.demandData('owner').write('Nick');
-
-            owner = sweet.findData('owner').read();
-            assert.equal(owner, 'Lars');
-
-            owner = sour.findData('owner').read();
-            assert.equal(owner, 'Nick');
-
-            owner = tart.findData('owner').read();
-            assert.equal(owner, 'Scott');
-
-            owner = mango.findData('owner').read();
-            assert.equal(owner, 'Landon');
-
+            var value = msgLog[2];
+            var topic = packetLog[1].topic;
+            assert.equal(value, 'Romdeau');
+            assert.equal(topic, 'character');
+            assert.equal(msgLog.length, 4);
 
         });
 
-
-    });
-
+        it('finds data up the tree', function(){
 
 
 
+        });
 
 
 });

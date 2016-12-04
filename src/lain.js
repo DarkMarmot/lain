@@ -51,6 +51,7 @@
         this.children = [];
         this.dimensions = {data: {}}; // by dimension then data name
         this.valves = {}; // by dimension then data name
+        this.mirrors = {}; // by dimension then data name
         this.destructibles = []; // list of items to destroy with scope
         this.destructors = []; // list of matching destructor methods
         this.dead = false;
@@ -89,6 +90,7 @@
         this.children = [];
         this.dimensions = {data: {}};
         this.valves = {};
+        this.mirrors = {};
         this.destructibles = [];
         this.destructors = [];
 
@@ -122,6 +124,7 @@
 
     };
 
+    // wipes everything in the scope, reset and ready for new data and children
     Scope.prototype.clear = function(toDestroy){
 
         this._destroyContents();
@@ -140,10 +143,12 @@
 
     };
 
+    // wipes everything in the scope, dead and ready for disposal
     Scope.prototype.destroy = function(){
 
         this._destroyContents();
         this._nullify();
+        this.assignParent(null);
         this.dead = true;
 
     };
@@ -191,15 +196,33 @@
     Scope.prototype.setValves = function(names, dimension){
 
         dimension = dimension || 'data';
-        this.valves[dimension] = names;
+        var valves = this.valves[dimension] = this.valves[dimension] || {};
+        var len = names.length;
+        for(var i = 0; i < len; i++){
+            var name = names[i];
+            valves[name] = true;
+        }
 
+        return this;
     };
 
     Scope.prototype.addValve = function(name, dimension){
 
         dimension = dimension || 'data';
-        var list = this.valves[dimension] = this.valves[dimension] || [];
+        var valves = this.valves[dimension] = this.valves[dimension] || {};
+        valves[name] = true;
+
+        return this;
+    };
+
+    Scope.prototype.addMirror = function(name, dimension){
+
+        dimension = dimension || 'data';
+        var mirrors = this.mirrors[dimension] = this.mirrors[dimension] || {};
+        var original = this.findData(name, dimension);
+
         list.push(name);
+
 
     };
 
@@ -327,6 +350,8 @@
             this.subscribers.splice(i, 1);
 
     };
+
+
 
 
     var Data = function(scope, name, dimension, ephemeral) {
@@ -466,6 +491,49 @@
     Data.prototype.toggle = function(topic){
         this.write(!this.read(topic), topic);
     };
+
+    // mirrors are read-only data proxies
+
+    var Mirror = function(data){
+
+        this.data = data;
+        this.data.monitor(this);
+    };
+
+    var Mp = Mirror.prototype;
+
+    Mp.tell = function(msg, currentPacket){
+        this.data.write(msg, currentPacket.topic);
+    };
+
+    Mp.read = function(topic){
+        return this.data.read(topic);
+    };
+
+    Mp.peek = function(topic){
+        return this.data.peek(topic);
+    };
+
+    Mp.drop = function(watcher, topic){
+        this.data.drop(watcher, topic);
+        return this;
+    };
+
+    Mp.monitor = function(watcher){
+        this.data.monitor(watcher);
+        return this;
+    };
+
+    Mp.subscribe = function(watcher, topic){
+        this.data.subscribe(watcher, topic);
+        return this;
+    };
+
+    Mp.destroy = function(){
+        this.drop();
+        this.data = null;
+    };
+
 
 
     var plugins = typeof seele !== 'undefined' && seele;
