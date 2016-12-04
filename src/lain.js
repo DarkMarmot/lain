@@ -51,7 +51,6 @@
         this.children = [];
         this.dimensions = {data: {}}; // by dimension then data name
         this.valves = {}; // by dimension then data name
-        this.plugs = {}; // by dimension then data name
         this.destructibles = []; // list of items to destroy with scope
         this.destructors = []; // list of matching destructor methods
         this.dead = false;
@@ -90,7 +89,6 @@
         this.children = [];
         this.dimensions = {data: {}};
         this.valves = {};
-        this.plugs = {};
         this.destructibles = [];
         this.destructors = [];
 
@@ -138,7 +136,6 @@
         this.destructors = null;
         this.children = null;
         this.valves = null;
-        this.plugs = null;
         this.parent = null;
 
     };
@@ -206,21 +203,6 @@
 
     };
 
-    Scope.prototype.setPlugs = function(names, dimension){
-
-        dimension = dimension || 'data';
-        this.plugs[dimension] = names;
-
-    };
-
-    Scope.prototype.addPlug = function(name, dimension){
-
-        dimension = dimension || 'data';
-        var list = this.plugs[dimension] = this.plugs[dimension] || [];
-        list.push(name);
-
-    };
-
 
     Scope.prototype.demandDimension = function(dimension){
 
@@ -258,16 +240,11 @@
         while(parent){
 
             var valves = parent.valves;
-            var plugs = parent.plugs;
 
             var whiteList = valves[dimension];
-            var blackList = plugs[dimension];
 
             // if a valve exists and the name is not white-listed, return null
             if(whiteList && !whiteList[name])
-                return null;
-
-            if(blackList && blackList[name])
                 return null;
 
             var d = parent.getData(name, dimension);
