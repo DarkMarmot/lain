@@ -1,0 +1,35 @@
+{
+  "name": "lain",
+  "version": "1.0.0",
+  "description": "the pubsub datastore of nested scopes in the wired",
+  "main": "dist/lain.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DarkMarmot/lain.git"
+  },
+  "keywords": [
+    "lain",
+    "pubsub",
+    "pub",
+    "sub",
+    "scope",
+    "datastore"
+  ],
+  "authors": [
+    "Scott Southworth (https://twitter.com/DarkMarmot)"
+  ],
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/DarkMarmot/lain/issues"
+  },
+  "homepage": "https://github.com/DarkMarmot/lain",
+  "devDependencies": {
+    "mocha": "^3.2.0"
+  }
+}
