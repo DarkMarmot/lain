@@ -26,9 +26,12 @@
         this._root = new Scope('LAIN');
     }
 
-
     Lain.prototype.createChild = function(name){
         return this._root.createChild(name);
+    };
+
+    Lain.prototype.clear = function(){
+        this._root.clear();
     };
 
     function Packet(msg, topic, source){
@@ -43,11 +46,12 @@
     function Scope(name) {
 
         this.id = ++idCounter;
-        this.name = name;
+        this._name = name;
         this.parent = null;
         this.children = [];
         this.dimensions = {data: {}}; // by dimension then data name
         this.valves = {}; // by dimension then data name
+        this.plugs = {}; // by dimension then data name
         this.destructibles = []; // list of items to destroy with scope
         this.destructors = []; // list of matching destructor methods
         this.dead = false;
@@ -81,7 +85,18 @@
 
     };
 
-    Scope.prototype.destroy = function(){
+    Scope.prototype._reset = function(){
+
+        this.children = [];
+        this.dimensions = {data: {}};
+        this.valves = {};
+        this.plugs = {};
+        this.destructibles = [];
+        this.destructors = [];
+
+    };
+
+    Scope.prototype._destroyContents = function(){
 
         var i, len;
 
@@ -106,14 +121,33 @@
             m.call(d);
         }
 
+
+    };
+
+    Scope.prototype.clear = function(toDestroy){
+
+        this._destroyContents();
+        this._reset();
+
+    };
+
+    Scope.prototype._nullify = function(){
+
         this.dimensions = null;
         this.destructibles = null;
         this.destructors = null;
         this.children = null;
         this.valves = null;
+        this.plugs = null;
         this.parent = null;
-        this.dead = true;
 
+    };
+
+    Scope.prototype.destroy = function(){
+
+        this._destroyContents();
+        this._nullify();
+        this.dead = true;
 
     };
 
@@ -157,7 +191,36 @@
 
     };
 
-    // scope -- getValves, setValves, addValve, removeValve
+    Scope.prototype.setValves = function(names, dimension){
+
+        dimension = dimension || 'data';
+        this.valves[dimension] = names;
+
+    };
+
+    Scope.prototype.addValve = function(name, dimension){
+
+        dimension = dimension || 'data';
+        var list = this.valves[dimension] = this.valves[dimension] || [];
+        list.push(name);
+
+    };
+
+    Scope.prototype.setPlugs = function(names, dimension){
+
+        dimension = dimension || 'data';
+        this.plugs[dimension] = names;
+
+    };
+
+    Scope.prototype.addPlug = function(name, dimension){
+
+        dimension = dimension || 'data';
+        var list = this.plugs[dimension] = this.plugs[dimension] || [];
+        list.push(name);
+
+    };
+
 
     Scope.prototype.demandDimension = function(dimension){
 
@@ -175,7 +238,6 @@
 
             data = new Data(this, name, dimension, ephemeral);
             dataByName[name] = data;
-            data.scope = this;
 
         }
 
@@ -194,11 +256,18 @@
         var parent = this.parent;
 
         while(parent){
-            var parentValves = parent.valves;
-            var whiteList = parentValves[dimension];
+
+            var valves = parent.valves;
+            var plugs = parent.plugs;
+
+            var whiteList = valves[dimension];
+            var blackList = plugs[dimension];
 
             // if a valve exists and the name is not white-listed, return null
             if(whiteList && !whiteList[name])
+                return null;
+
+            if(blackList && blackList[name])
                 return null;
 
             var d = parent.getData(name, dimension);
@@ -230,7 +299,7 @@
         this.lastPacket = null;
         this.data = data;
         this.ephemeral = data.ephemeral;
-        this.name = data.name;
+        this._name = data._name;
         this.dead = false;
 
     };
@@ -240,19 +309,19 @@
 
         if(this.dead) return;
 
-        var topic = topic || this.topic;
-        var source = this.name;
-        var last = this.lastPacket;
+        topic = topic || this.topic;
+        var source = this._name;
+        var currentPacket = new Packet(msg, topic, source);
 
         if(!this.ephemeral)
-            this.lastPacket = new Packet(msg, topic, source);
+            this.lastPacket = currentPacket;
 
         var subscribers = [].concat(this.subscribers); // call original sensors in case subscriptions change mid loop
         var len = subscribers.length;
 
         for(var i = 0; i < len; i++){
             var s = subscribers[i];
-            s.tell(msg, topic, source, last);
+            typeof s === 'function' ? s.call(s, msg, currentPacket) : s.tell(msg, currentPacket);
         }
 
     };
@@ -267,11 +336,13 @@
 
     };
 
-    SubscriberList.prototype.subscribe = function(stream){
-        this.subscribers.push(stream);
+    SubscriberList.prototype.add = function(watcher){
+
+        this.subscribers.push(watcher);
+
     };
 
-    SubscriberList.prototype.drop = function(watcher){
+    SubscriberList.prototype.remove = function(watcher){
 
         var i = this.subscribers.indexOf(watcher);
 
@@ -283,10 +354,10 @@
 
     var Data = function(scope, name, dimension, ephemeral) {
 
-        this.dimension = dimension || 'data';
-        this.ephemeral = !!ephemeral;
-        this.name = name;
+        scope.assign(this, this.destroy);
         this.scope = scope;
+        this.ephemeral = !!ephemeral;
+        this._name = name;
 
         this.noTopicSubscriberList = new SubscriberList(null, this);
         this.wildcardSubscriberList = new SubscriberList(null, this);
@@ -297,6 +368,23 @@
 
     };
 
+    var Dp = Data.prototype;
+
+    Dp.name = function(){
+       return this._name;
+    };
+
+    Dp.ephemeral = function(){
+        return this.ephemeral;
+    };
+
+    Dp.dead = function(){
+        return this.dead;
+    };
+
+    Dp.scope = function(){
+        return this.scope;
+    };
 
     Data.prototype.destroy = function(){
 
@@ -309,11 +397,11 @@
             list.destroy();
         }
 
+        this.scope = null;
         this.noTopicSubscriberList = null;
         this.wildcardSubscriberList = null;
         this.subscriberListsByTopic = null;
-        
-        this.scope = null;
+
         this.dead = true;
 
     };
@@ -333,28 +421,28 @@
     Data.prototype.subscribe = function(watcher, topic){
 
         if(!topic){
-            this.noTopicSubscriberList.subscribers.push(watcher);
+            this.noTopicSubscriberList.add(watcher);
         } else {
             var subscriberList = this.demandSubscriberList(topic);
-            subscriberList.subscribers.push(watcher);
+            subscriberList.add(watcher);
         }
 
     };
 
     Data.prototype.monitor = function(watcher){
-        this.wildcardSubscriberList.subscribers.push(watcher);
+        this.wildcardSubscriberList.add(watcher);
     };
 
 
     Data.prototype.drop = function(watcher, topic){
 
         if(!topic){
-            this.noTopicSubscriberList.drop(watcher);
+            this.noTopicSubscriberList.remove(watcher);
         } else {
             var subscriberList = this.demandSubscriberList(topic);
-            subscriberList.drop(watcher);
+            subscriberList.remove(watcher);
         }
-        this.wildcardSubscriberList.drop(watcher);
+        this.wildcardSubscriberList.remove(watcher);
 
     };
 

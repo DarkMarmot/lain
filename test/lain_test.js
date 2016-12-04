@@ -1,65 +1,146 @@
 //run mocha from project root
 
-
 var assert = require('assert');
 var Lain = require('../src/lain.js');
 
-var _invoked = 0;
-var _msg;
-var _topic;
-var _tag;
-var _context;
+var root = new Lain();
 
-var _logger = function(msg, topic, tag){
+var packetLog;
+var msgLog;
+var contextLog;
 
-    console.log("LOG: ",msg,  " : " + topic + " : " + tag + "\n");
+function Watcher(name){
 
-};
+    this.name = name;
 
-var _callback = function(msg, topic, tag){
+}
 
-    _context = this;
-    _msg = msg;
-    _topic = topic;
-    _tag = tag;
-    _invoked++;
+Watcher.prototype.tell = function(msg, packet){
+
+    callback(msg, packet, this);
 
 };
 
-var _script = {
-    mehve: 1,
-    ohmu: 999
-};
+function callback(msg, packet){
 
+    msgLog.push(msg);
+    packetLog.push(packet);
+    contextLog.push(this);
 
+}
 
+function resetLog(){
 
-var tree, boat, castle, valley, airship, girl, ohmu, yupa, lands;
+    packetLog = [];
+    msgLog = [];
+    contextLog = [];
 
-var _reset = function(){
-
-    _context = undefined;
-    _msg = undefined;
-    _topic = undefined;
-    _tag = undefined;
-    _invoked = 0;
-
-   // if(girl) { girl.drop(); girl = null;}
-
-};
-
-var root = new Lain().createChild();
-
-castle = root.demandData('castle');
-valley  = root.demandData('valley');
-airship  = root.demandData('airship');
-
+}
 
 
 describe('Lain', function(){
 
-    before(function(){
-        tree = root.demandData('tree');
+    var world;
+
+
+
+    describe('Data', function(){
+
+        before(function(){
+
+            resetLog();
+            root.clear();
+            world = root.createChild('world');
+
+        });
+
+        it('can create named data', function(){
+
+            var d = world.demandData('ergo');
+            var name = d.name();
+            assert.equal('ergo', name);
+
+        });
+
+        it('can write data', function(){
+
+            var d = world.demandData('ergo');
+            d.write('proxy');
+            var value = d.read();
+
+            assert.equal('proxy', value);
+
+        });
+
+        it('can modify data', function(){
+
+            var d = world.demandData('ergo');
+            d.write('autoreiv');
+            var value = d.read();
+
+            assert.equal('autoreiv', value);
+
+        });
+
+
+
+        it('can toggle data', function(){
+
+            var d = world.demandData('ergo');
+            d.toggle();
+            assert.equal(false, d.read());
+            d.toggle();
+            assert.equal(true, d.read());
+            d.toggle();
+            assert.equal(false, d.read());
+
+        });
+
+
+        it('can subscribe to data', function(){
+
+            resetLog();
+            var d = world.demandData('ergo');
+            d.subscribe(callback);
+            d.write('Re-L');
+            var value = msgLog[0];
+            assert.equal('Re-L', value);
+
+        });
+
+
+        it('can refresh existing data', function(){
+
+            resetLog();
+            var d = world.demandData('ergo');
+            d.refresh();
+            var value = msgLog[0];
+            assert.equal('Re-L', value);
+
+        });
+
+        it('can subscribe to topics', function(){
+
+            resetLog();
+            world.clear();
+            var d = world.demandData('ergo');
+            d.subscribe(callback, 'arcology');
+            d.write('Vincent', 'character');
+            d.write('Re-L', 'character');
+            d.write('Romdeau', 'arcology');
+            d.write('wasteland');
+
+            console.log(msgLog[0]);
+            console.log(msgLog[1]);
+
+            var value = msgLog[0];
+            assert.equal(value, 'Romdeau');
+            assert.equal(msgLog.length, 1);
+
+        });
+
+
+
     });
 
     describe('Scopes', function(){
@@ -103,43 +184,7 @@ describe('Lain', function(){
 
     });
 
-    describe('Datas', function(){
 
-
-        it('can hold data', function(){
-            tree.write('Totoro');
-            assert.equal('Totoro', tree.read());
-        });
-
-        it('can modify data', function(){
-            tree.write('Kittenbus');
-            assert.equal('Kittenbus', tree.read());
-            tree.write('Catbus');
-            assert.equal('Catbus', tree.read());
-        });
-
-
-
-        it('can toggle data', function(){
-            tree.write('Mei');
-            tree.toggle();
-            assert.equal(false, tree.read());
-            tree.toggle();
-            assert.equal(true, tree.read());
-            tree.toggle();
-            assert.equal(false, tree.read());
-        });
-
-
-        it('can refresh data without changing', function(){
-            tree.write('Catbus');
-            tree.refresh();
-            assert.equal('Catbus', tree.read());
-        });
-
-
-
-    });
 
 
 
