@@ -477,7 +477,6 @@
 
     Dp.peek = function(topic){
 
-
         var subscriberList = topic ? this.subscriberListsByTopic[topic] : this.noTopicSubscriberList;
         if(!subscriberList)
             return null;
@@ -495,7 +494,6 @@
 
     Dp.write = function(msg, topic){
 
-        
         if(topic) {
             var list = this.demandSubscriberList(topic);
             list.tell(msg);
@@ -546,7 +544,8 @@
     };
 
     Mp.drop = function(watcher, topic){
-        this.data.drop(watcher, topic);
+        if(!this.data.dead)
+            this.data.drop(watcher, topic);
         return this;
     };
 
@@ -563,6 +562,7 @@
     Mp.destroy = function(){
         this.drop();
         this.data = null;
+        this.dead = true;
     };
 
 
