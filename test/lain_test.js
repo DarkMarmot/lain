@@ -151,11 +151,88 @@ describe('Lain', function(){
 
         });
 
-        it('finds data up the tree', function(){
+    it('creates child scopes', function(){
+
+        resetLog();
+        world.clear();
+
+        var city1 = world.createChild();
+        var city2 = world.createChild();
+
+        var d0 = world.demandData('ergo');
+        var d1 = city1.demandData('ergo');
+        var d2 = city2.demandData('proxy');
+
+        d0.write('0');
+        d1.write('1');
+        d2.write('2');
+
+        assert.equal(d0.read(), '0');
+        assert.equal(d1.read(), '1');
+        assert.equal(d2.read(), '2');
+
+    });
+
+    it('finds data in higher scopes', function(){
+
+        resetLog();
+        world.clear();
+
+        var city1 = world.createChild();
+        var city2 = world.createChild();
+
+        var d0 = world.demandData('ergo');
+        var d1 = city1.demandData('ergo');
+        var d2 = city2.demandData('proxy');
+
+        d0.write('0');
+        d1.write('1');
+        d2.write('2');
+
+        var f1 = city1.findData('ergo');
+        var f2 = city2.findData('ergo');
+
+        assert.equal(f1.read(), '1');
+        assert.equal(f2.read(), '0');
+
+    });
+
+    it('mirror data for read-only access', function(){
+
+        resetLog();
+        world.clear();
+
+        var city1 = world.createChild();
+        var city2 = world.createChild();
+
+        var d0 = world.demandData('ergo');
+        var d1 = city1.demandData('ergo');
+        var d2 = city2.demandData('proxy');
+
+        d0.write('0');
+        d1.write('1');
+        d2.write('2');
+
+        world.addMirror('ergo');
+
+        var f1 = city1.findData('ergo');
+        var f2 = city2.findData('ergo');
+
+        d0.write('3');
+
+        assert.equal(f1.read(), '1');
+        assert.equal(f2.read(), '3');
+        assert.equal(f2.readOnly, true);
+
+        assert.throws(function () { throw new Error("Error thrown") }, Error, "Error thrown");
+
+        var writeToMirror = function(){ f2.write('4');};
+
+        assert.throws(writeToMirror, Error, 'Data from a mirror is read-only.');
+
+    });
 
 
-
-        });
 
 
 });

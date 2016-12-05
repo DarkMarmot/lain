@@ -206,6 +206,7 @@
         return this;
     };
 
+
     Scope.prototype.addValve = function(name, dimension){
 
         dimension = dimension || 'data';
@@ -215,14 +216,16 @@
         return this;
     };
 
+
     Scope.prototype.addMirror = function(name, dimension){
 
         dimension = dimension || 'data';
         var mirrors = this.mirrors[dimension] = this.mirrors[dimension] || {};
         var original = this.findData(name, dimension);
 
-        list.push(name);
+        mirrors[name] = new Mirror(this, original);
 
+        return this;
 
     };
 
@@ -263,12 +266,18 @@
         while(parent){
 
             var valves = parent.valves;
-
             var whiteList = valves[dimension];
 
             // if a valve exists and the name is not white-listed, return null
             if(whiteList && !whiteList[name])
                 return null;
+
+            var mirrors = parent.mirrors;
+            var mirrorList = mirrors[dimension];
+            var mirroredData = mirrorList && mirrorList[name];
+
+            if(mirroredData)
+                return mirroredData;
 
             var d = parent.getData(name, dimension);
             if(d)
@@ -494,16 +503,21 @@
 
     // mirrors are read-only data proxies
 
-    var Mirror = function(data){
+    var Mirror = function(scope, data){
 
+        scope.assign(this, this.destroy);
+        this.scope = scope;
+        this.readOnly = true;
+        this._name = data.name;
         this.data = data;
-        this.data.monitor(this);
+
+        this.dead = false;
     };
 
     var Mp = Mirror.prototype;
 
-    Mp.tell = function(msg, currentPacket){
-        this.data.write(msg, currentPacket.topic);
+    Mp.write = function(){
+        throw(new Error('Data from a mirror is read-only.'));
     };
 
     Mp.read = function(topic){
