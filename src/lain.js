@@ -257,6 +257,19 @@
 
     };
 
+
+    Sp.demandAction = function(name, dimension){
+        return this.demandData(name, dimension, true);
+    };
+
+
+    Sp.demandState = function(name, dimension){
+        var d = this.demandData(name, dimension);
+        this.addMirror(name, dimension);
+        return d;
+    };
+
+
     Sp.findData = function(name, dimension){
 
         dimension = dimension || 'data';
@@ -295,11 +308,13 @@
 
 
     Sp.getData = function(name, dimension) {
+
         dimension = dimension || 'data';
         var dataByName = this.dimensions[dimension];
         if(!dataByName)
             return null;
         return dataByName[name] || null;
+
     };
 
 

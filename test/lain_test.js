@@ -197,6 +197,43 @@ describe('Lain', function(){
 
     });
 
+    it('valves restrict data in higher scopes', function(){
+
+        resetLog();
+
+        world.clear();
+
+
+        var city1 = world.createChild();
+        var city2 = world.createChild();
+
+        var d0 = world.demandData('ergo');
+        var d1 = city1.demandData('ergo');
+        var d2 = city2.demandData('proxy');
+
+        var d3 = world.demandData('Re-L');
+        world.addValve('Re-L');
+
+        d0.write('0');
+        d1.write('1');
+        d2.write('2');
+        d3.write('3');
+
+        var f1 = city1.findData('ergo');
+        var f2 = city2.findData('ergo');
+        var f3 = city1.findData('Re-L');
+        var f4 = world.findData('Re-L');
+        var f5 = world.findData('ergo');
+
+        assert.equal(f1.read(), '1');
+        assert.equal(f2, null); // access blocked by valve
+        assert.equal(f3.read(), '3'); // remote access through valve
+        assert.equal(f4.read(), '3'); // local access through valve
+        assert.equal(f5.read(), '0'); // local access despite valve (valves only block from below)
+
+
+    });
+
     it('mirror data for read-only access', function(){
 
         resetLog();
