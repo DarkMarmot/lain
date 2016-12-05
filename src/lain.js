@@ -26,11 +26,13 @@
         this._root = new Scope('LAIN');
     }
 
-    Lain.prototype.createChild = function(name){
+    var Lp = Lain.prototype;
+
+    Lp.createChild = function(name){
         return this._root.createChild(name);
     };
 
-    Lain.prototype.clear = function(){
+    Lp.clear = function(){
         this._root.clear();
     };
 
@@ -58,11 +60,13 @@
 
     }
 
+    var Sp = Scope.prototype;
+
     // assign an object to be destroyed with this scope
     // it should have a destructor method (by default destroy or dispose will be called)
     // you can specify a method by name (string) or via a reference function
 
-    Scope.prototype.assign = function(destructible, method){
+    Sp.assign = function(destructible, method){
 
         if(typeof  destructible !== 'object' && typeof  destructible !== 'function'){
             throw new Error('Scope.assign requires an object with a destroy of dispose method.');
@@ -85,7 +89,7 @@
 
     };
 
-    Scope.prototype._reset = function(){
+    Sp._reset = function(){
 
         this.children = [];
         this.dimensions = {data: {}};
@@ -96,7 +100,7 @@
 
     };
 
-    Scope.prototype._destroyContents = function(){
+    Sp._destroyContents = function(){
 
         var i, len;
 
@@ -125,14 +129,14 @@
     };
 
     // wipes everything in the scope, reset and ready for new data and children
-    Scope.prototype.clear = function(toDestroy){
+    Sp.clear = function(toDestroy){
 
         this._destroyContents();
         this._reset();
 
     };
 
-    Scope.prototype._nullify = function(){
+    Sp._nullify = function(){
 
         this.dimensions = null;
         this.destructibles = null;
@@ -144,7 +148,7 @@
     };
 
     // wipes everything in the scope, dead and ready for disposal
-    Scope.prototype.destroy = function(){
+    Sp.destroy = function(){
 
         this._destroyContents();
         this._nullify();
@@ -154,7 +158,7 @@
     };
 
 
-    Scope.prototype.createChild = function(name){
+    Sp.createChild = function(name){
 
         var child = new Scope(name);
         child.assignParent(this);
@@ -162,7 +166,7 @@
 
     };
 
-    Scope.prototype.insertParent = function(newParent){
+    Sp.insertParent = function(newParent){
 
         var oldParent = this.parent;
         newParent.assignParent(oldParent);
@@ -171,7 +175,7 @@
 
     };
 
-    Scope.prototype.assignParent = function(newParent){
+    Sp.assignParent = function(newParent){
 
         var oldParent = this.parent;
 
@@ -193,7 +197,7 @@
 
     };
 
-    Scope.prototype.setValves = function(names, dimension){
+    Sp.setValves = function(names, dimension){
 
         dimension = dimension || 'data';
         var valves = this.valves[dimension] = this.valves[dimension] || {};
@@ -207,7 +211,7 @@
     };
 
 
-    Scope.prototype.addValve = function(name, dimension){
+    Sp.addValve = function(name, dimension){
 
         dimension = dimension || 'data';
         var valves = this.valves[dimension] = this.valves[dimension] || {};
@@ -217,7 +221,7 @@
     };
 
 
-    Scope.prototype.addMirror = function(name, dimension){
+    Sp.addMirror = function(name, dimension){
 
         dimension = dimension || 'data';
         var mirrors = this.mirrors[dimension] = this.mirrors[dimension] || {};
@@ -230,13 +234,13 @@
     };
 
 
-    Scope.prototype.demandDimension = function(dimension){
+    Sp.demandDimension = function(dimension){
 
         return this.dimensions[dimension] = this.dimensions[dimension] || {};
 
     };
 
-    Scope.prototype.demandData = function(name, dimension, ephemeral){
+    Sp.demandData = function(name, dimension, ephemeral){
 
         dimension = dimension || 'data';
         var dataByName = this.demandDimension(dimension);
@@ -253,7 +257,7 @@
 
     };
 
-    Scope.prototype.findData = function(name, dimension){
+    Sp.findData = function(name, dimension){
 
         dimension = dimension || 'data';
 
@@ -290,7 +294,7 @@
     };
 
 
-    Scope.prototype.getData = function(name, dimension) {
+    Sp.getData = function(name, dimension) {
         dimension = dimension || 'data';
         var dataByName = this.dimensions[dimension];
         if(!dataByName)
@@ -313,8 +317,9 @@
 
     };
 
+    var Slp = SubscriberList.prototype;
 
-    SubscriberList.prototype.tell = function(msg, topic){
+    Slp.tell = function(msg, topic){
 
         if(this.dead) return;
 
@@ -335,7 +340,7 @@
 
     };
 
-    SubscriberList.prototype.destroy = function(){
+    Slp.destroy = function(){
 
         if(this.dead) return;
 
@@ -345,13 +350,13 @@
 
     };
 
-    SubscriberList.prototype.add = function(watcher){
+    Slp.add = function(watcher){
 
         this.subscribers.push(watcher);
 
     };
 
-    SubscriberList.prototype.remove = function(watcher){
+    Slp.remove = function(watcher){
 
         var i = this.subscribers.indexOf(watcher);
 
@@ -359,9 +364,6 @@
             this.subscribers.splice(i, 1);
 
     };
-
-
-
 
     var Data = function(scope, name, dimension, ephemeral) {
 
@@ -397,7 +399,7 @@
         return this.scope;
     };
 
-    Data.prototype.destroy = function(){
+    Dp.destroy = function(){
 
         if(this.dead)
             return;
@@ -418,7 +420,7 @@
     };
 
 
-    Data.prototype.demandSubscriberList = function(topic){
+    Dp.demandSubscriberList = function(topic){
 
         var df = this.subscriberListsByTopic[topic];
 
@@ -429,7 +431,7 @@
 
     };
 
-    Data.prototype.subscribe = function(watcher, topic){
+    Dp.subscribe = function(watcher, topic){
 
         if(!topic){
             this.noTopicSubscriberList.add(watcher);
@@ -440,12 +442,12 @@
 
     };
 
-    Data.prototype.monitor = function(watcher){
+    Dp.monitor = function(watcher){
         this.wildcardSubscriberList.add(watcher);
     };
 
 
-    Data.prototype.drop = function(watcher, topic){
+    Dp.drop = function(watcher, topic){
 
         if(!topic){
             this.noTopicSubscriberList.remove(watcher);
@@ -458,7 +460,7 @@
     };
 
 
-    Data.prototype.peek = function(topic){
+    Dp.peek = function(topic){
 
 
         var subscriberList = topic ? this.subscriberListsByTopic[topic] : this.noTopicSubscriberList;
@@ -468,7 +470,7 @@
 
     };
 
-    Data.prototype.read = function(topic) {
+    Dp.read = function(topic) {
 
         var packet = this.peek(topic);
         return (packet) ? packet.msg : undefined;
@@ -476,7 +478,7 @@
     };
 
 
-    Data.prototype.write = function(msg, topic){
+    Dp.write = function(msg, topic){
 
         
         if(topic) {
@@ -492,12 +494,12 @@
     };
 
     
-    Data.prototype.refresh = function(topic){
+    Dp.refresh = function(topic){
         this.write(this.read(topic), topic);
     };
 
     
-    Data.prototype.toggle = function(topic){
+    Dp.toggle = function(topic){
         this.write(!this.read(topic), topic);
     };
 
