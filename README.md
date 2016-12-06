@@ -1,6 +1,6 @@
 # Lain.js
 
-A in-memory data store that supports unidirectional data-flow with a tree hierarchy of dynamic observable scopes and subscriptions mediated by 'inversion of access' (where encapsulation is defined from above).
+An in-memory data store that supports unidirectional data-flow with a tree hierarchy of dynamic, observable scopes. Subscriptions are mediated through 'inversion of access' (where encapsulation is defined from above).
 Designed for client or server usage.
 
 ## Usage
