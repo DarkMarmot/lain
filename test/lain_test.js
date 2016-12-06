@@ -329,6 +329,7 @@ describe('Lain', function(){
         assert.equal(f5.read(), '0'); // local access despite valve (valves only block from below)
 
 
+
     });
 
     it('can mirror data for read-only access', function(){

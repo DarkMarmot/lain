@@ -270,6 +270,100 @@
     };
 
 
+    Sp.findDataSet = function(names, dimension){
+
+        var len = names.length;
+        var result = {};
+        for(var i = 0; i < len; i++){
+            var name = names[i];
+            result[name] = this.findData(name, dimension);
+        }
+
+        return result;
+
+    };
+
+    Sp.readDataSet = function(names, dimension){
+
+        var dataSet = this.findDataSet(names, dimension);
+        var result = {};
+        for(var name in dataSet){
+            var d = dataSet[name];
+            var last = d && d.peek();
+            if(last)
+                result[name] = d.msg;
+        }
+
+        return result;
+
+    };
+
+    // created a flattened view of all data at and above this scope
+
+    Sp.flatten = function(dimension){
+
+        dimension = dimension || 'data';
+
+        var result = {};
+        var whitelist = null;
+
+        var dataByName = this.dimensions[dimension] || {};
+        var dataName;
+
+        for(dataName in dataByName){
+            result[dataName] = dataByName[dataName];
+        }
+
+        var scope = this;
+        var valveName;
+        var data;
+
+        while(scope = scope.parent){
+
+            dataByName = scope.dimensions[dimension] || {};
+            var valves = scope.valves[dimension];
+            var mirrors = scope.mirrors;
+            var mirrorList = mirrors[dimension];
+
+            // further restrict whitelist with each set of valves
+
+            if(valves){
+                if(whitelist){
+                    for(valveName in whitelist){
+                        whitelist[valveName] = whitelist[valveName] && valves[valveName];
+                    }
+                } else {
+                    whitelist = {};
+                    for(valveName in valves){
+                        whitelist[valveName] = valves[valveName];
+                    }
+                }
+            }
+
+            if(whitelist){
+                for(dataName in whitelist){
+                    if(!result[dataName]) {
+                        data = (mirrorList && mirrorList[dataName]) || dataByName[dataName];
+                        result[dataName] = data;
+                    }
+                }
+            } else {
+                for(dataName in dataByName){
+                    if(!result[dataName]) {
+                        data = (mirrorList && mirrorList[dataName]) || dataByName[dataName];
+                        result[dataName] = data;
+                    }
+                }
+            }
+
+        }
+
+
+        return result;
+
+    };
+
+
     Sp.findData = function(name, dimension){
 
         dimension = dimension || 'data';
@@ -278,28 +372,28 @@
         if(localData)
             return localData;
 
-        var parent = this.parent;
+        var scope = this;
 
-        while(parent){
+        while(scope = scope.parent){
 
-            var valves = parent.valves;
+            var valves = scope.valves;
             var whiteList = valves[dimension];
 
             // if a valve exists and the name is not white-listed, return null
             if(whiteList && !whiteList[name])
                 return null;
 
-            var mirrors = parent.mirrors;
+            var mirrors = scope.mirrors;
             var mirrorList = mirrors[dimension];
             var mirroredData = mirrorList && mirrorList[name];
 
             if(mirroredData)
                 return mirroredData;
 
-            var d = parent.getData(name, dimension);
+            var d = scope.getData(name, dimension);
             if(d)
                 return d;
-            parent = parent.parent;
+
         }
 
         return null;
@@ -316,6 +410,8 @@
         return dataByName[name] || null;
 
     };
+
+
 
 
 

@@ -1,5 +1,5 @@
 {
-  "name": "lain",
+  "name": "lain-js",
   "version": "1.0.0",
   "description": "the pubsub datastore of nested scopes in the wired",
   "main": "dist/lain.js",
