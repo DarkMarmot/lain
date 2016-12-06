@@ -263,8 +263,8 @@ describe('Lain', function(){
         d1.write('1');
         d2.write('2');
 
-        var f1 = city1.findData('ergo');
-        var f2 = city2.findData('ergo');
+        var f1 = city1.find('ergo');
+        var f2 = city2.find('ergo');
 
         assert.equal(f1.read(), '1');
         assert.equal(f2.read(), '0');
@@ -316,19 +316,17 @@ describe('Lain', function(){
         d2.write('2');
         d3.write('3');
 
-        var f1 = city1.findData('ergo');
-        var f2 = city2.findData('ergo');
-        var f3 = city1.findData('Re-L');
-        var f4 = world.findData('Re-L');
-        var f5 = world.findData('ergo');
+        var f1 = city1.find('ergo');
+        var f2 = city2.find('ergo');
+        var f3 = city1.find('Re-L');
+        var f4 = world.find('Re-L');
+        var f5 = world.find('ergo');
 
         assert.equal(f1.read(), '1'); // access never encounters valve above
         assert.equal(f2, null); // access blocked by valve
         assert.equal(f3.read(), '3'); // remote access through valve
         assert.equal(f4.read(), '3'); // local access through valve
         assert.equal(f5.read(), '0'); // local access despite valve (valves only block from below)
-
-
 
     });
 
@@ -350,8 +348,8 @@ describe('Lain', function(){
 
         world.mirror('ergo');
 
-        var f1 = city1.findData('ergo');
-        var f2 = city2.findData('ergo');
+        var f1 = city1.find('ergo');
+        var f2 = city2.find('ergo');
 
         d0.write('3');
 
@@ -381,8 +379,8 @@ describe('Lain', function(){
         d0.write('0');
         d1.write('1');
 
-        var f1 = city1.findData('ergo'); // from below, finds mirror as read-only
-        var f2 = world.findData('ergo'); // locally, finds data with write access
+        var f1 = city1.find('ergo'); // from below, finds mirror as read-only
+        var f2 = world.find('ergo'); // locally, finds data with write access
 
         f2.write('3'); // can write to state, affects both data and mirror
 

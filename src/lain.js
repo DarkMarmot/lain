@@ -21,20 +21,6 @@
     "use strict";
 
     var idCounter = 0;
-    //
-    //function Lain(){
-    //    this._root = new Scope('LAIN');
-    //}
-    //
-    //var Lp = Lain.prototype;
-    //
-    //Lp.createChild = function(name){
-    //    return this._root.createChild(name);
-    //};
-    //
-    //Lp.clear = function(){
-    //    this._root.clear();
-    //};
 
     var Lain = new Scope('LAIN');
 
@@ -52,7 +38,7 @@
         this.id = ++idCounter;
         this._name = name;
         this.parent = null;
-        this.children = [];
+        this._children = [];
         this.dimensions = {data: {}}; // by dimension then data name
         this.valves = {}; // by dimension then data name
         this.mirrors = {}; // by dimension then data name
@@ -93,12 +79,27 @@
 
     Sp._reset = function(){
 
-        this.children = [];
+        this._children = [];
         this.dimensions = {data: {}};
         this.valves = {};
         this.mirrors = {};
         this.destructibles = [];
         this.destructors = [];
+
+    };
+
+    Sp.children = function(){
+
+        var result = [];
+        var _children = this._children;
+        var len = _children.length;
+
+        for(var i = 0; i < len; i++){
+            var child = _children[i];
+            result.push(child);
+        }
+
+        return result;
 
     };
 
@@ -109,11 +110,11 @@
         if(this.dead)
             return;
 
-        var children = this.children;
-        len = children.length;
+        var _children = this._children;
+        len = _children.length;
 
         for(i = 0; i < len; i++){
-            var child = children[i];
+            var child = _children[i];
             child.destroy();
         }
 
@@ -130,7 +131,7 @@
 
     };
 
-    // wipes everything in the scope, reset and ready for new data and children
+    // wipes everything in the scope, reset and ready for new data and _children
     Sp.clear = function(){
 
         this._destroyContents();
@@ -143,7 +144,7 @@
         this.dimensions = null;
         this.destructibles = null;
         this.destructors = null;
-        this.children = null;
+        this._children = null;
         this.valves = null;
         this.parent = null;
 
@@ -154,16 +155,17 @@
 
         this._destroyContents();
         this._nullify();
-        this.assignParent(null);
+        this.setParent(null);
         this.dead = true;
 
     };
 
-
+    
+    
     Sp.createChild = function(name){
 
         var child = new Scope(name);
-        child.assignParent(this);
+        child.setParent(this);
         return child;
 
     };
@@ -171,13 +173,13 @@
     Sp.insertParent = function(newParent){
 
         var oldParent = this.parent;
-        newParent.assignParent(oldParent);
-        this.assignParent(newParent);
+        newParent.setParent(oldParent);
+        this.setParent(newParent);
         return this;
 
     };
 
-    Sp.assignParent = function(newParent){
+    Sp.setParent = function(newParent){
 
         var oldParent = this.parent;
 
@@ -185,14 +187,14 @@
             return;
 
         if(oldParent) {
-            var at = oldParent.children.indexOf(this);
-            oldParent.children.splice(at, 1);
+            var at = oldParent._children.indexOf(this);
+            oldParent._children.splice(at, 1);
         }
 
         this.parent = newParent;
 
         if(newParent) {
-            newParent.children.push(this);
+            newParent._children.push(this);
         }
         
         return this;
@@ -231,7 +233,7 @@
         if(existingMirror)
             return existingMirror;
 
-        var original = this.findData(name, dimension);
+        var original = this.find(name, dimension);
         return mirrors[name] = new Mirror(this, original);
 
 
@@ -274,7 +276,7 @@
         var result = {};
         for(var i = 0; i < len; i++){
             var name = names[i];
-            result[name] = this.findData(name, dimension);
+            result[name] = this.find(name, dimension);
         }
 
         return result;
@@ -362,11 +364,11 @@
     };
 
 
-    Sp.findData = function(name, dimension){
+    Sp.find = function(name, dimension){
 
         dimension = dimension || 'data';
 
-        var localData = this.getData(name, dimension);
+        var localData = this.findLocal(name, dimension);
         if(localData)
             return localData;
 
@@ -388,7 +390,7 @@
             if(mirroredData)
                 return mirroredData;
 
-            var d = scope.getData(name, dimension);
+            var d = scope.findLocal(name, dimension);
             if(d)
                 return d;
 
@@ -399,7 +401,7 @@
     };
 
 
-    Sp.getData = function(name, dimension) {
+    Sp.findLocal = function(name, dimension) {
 
         dimension = dimension || 'data';
         var dataByName = this.dimensions[dimension];
@@ -540,19 +542,29 @@
 
     };
 
+    Dp.follow = function(watcher, topic){
+
+        this.subscribe(watcher, topic);
+        var packet = this.peek();
+
+        if(packet)
+            typeof watcher === 'function' ? watcher.call(watcher, packet.msg, packet) : watcher.tell(packet.msg, packet);
+
+        return this;
+
+    };
+
     Dp.subscribe = function(watcher, topic){
 
-        if(!topic){
-            this.noTopicSubscriberList.add(watcher);
-        } else {
-            var subscriberList = this.demandSubscriberList(topic);
-            subscriberList.add(watcher);
-        }
+        var subscriberList = (!topic) ? this.noTopicSubscriberList : this.demandSubscriberList(topic);
+        subscriberList.add(watcher);
 
     };
 
     Dp.monitor = function(watcher){
+
         this.wildcardSubscriberList.add(watcher);
+
     };
 
 
@@ -650,6 +662,11 @@
 
     Mp.subscribe = function(watcher, topic){
         this.data.subscribe(watcher, topic);
+        return this;
+    };
+
+    Mp.follow = function(watcher, topic){
+        this.data.follow(watcher, topic);
         return this;
     };
 
