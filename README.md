@@ -53,6 +53,19 @@ Create a `Scope` from Lain (which is the root `Scope`) or another `Scope` using 
 * `state(name)` Gets or creates a local `Data` instance. It is read-only when accessed from any child scope.
 * `find(name)` Searches for a `Data` instance in the current scope and then continues searching up the scope tree.
 Returns `null` if no matches are found or if the search is blocked by a valve.
+* `reside(destructible, [destructor])` Ties the lifecycle of a destructible object to the scope. When the scope is destroyed or cleared,
+the destructible's destroy (or dispose as a fallback) method will be called. An alternate destructor method can be specified as well.
+
+* `insertParent(scope)` Inserts a scope between this scope and its parent scope.
+* `setParent(scope)` Assigns a parent scope to the current scope, removing its original parent (if any).
+Scopes can be orphan via setParent(null).
+* `flatten()` Creates a hash of all `Data` instances accessible to the current scope.
+* `here()` Creates a hash of all `Data` instances in the current scope. (not yet implemented)
+* `findDataSet(names)` Creates a hash of `Data` instances found through the current scope using the given names.
+* `readDataSet(names)` Like findDataSet -- but returns the message values instead of the `Data` instances.
+
+
+
 
 
 ### Class: Data
