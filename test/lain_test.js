@@ -3,7 +3,7 @@
 var assert = require('assert');
 var Lain = require('../src/lain.js');
 
-var root = new Lain();
+var root = Lain;
 
 var packetLog;
 var msgLog;
@@ -52,7 +52,7 @@ describe('Lain', function(){
 
         it('can create named data', function(){
 
-            var d = world.demandData('ergo');
+            var d = world.data('ergo');
             var name = d.name();
             assert.equal(name, 'ergo');
 
@@ -60,7 +60,7 @@ describe('Lain', function(){
 
         it('can write data', function(){
 
-            var d = world.demandData('ergo');
+            var d = world.data('ergo');
             d.write('proxy');
             var value = d.read();
 
@@ -70,7 +70,7 @@ describe('Lain', function(){
 
         it('can modify data', function(){
 
-            var d = world.demandData('ergo');
+            var d = world.data('ergo');
             d.write('autoreiv');
             var value = d.read();
 
@@ -82,7 +82,7 @@ describe('Lain', function(){
 
         it('can toggle data', function(){
 
-            var d = world.demandData('ergo');
+            var d = world.data('ergo');
             d.toggle();
             assert.equal(d.read(), false);
             d.toggle();
@@ -96,7 +96,7 @@ describe('Lain', function(){
         it('can subscribe to data', function(){
 
             resetLog();
-            var d = world.demandData('ergo');
+            var d = world.data('ergo');
             d.subscribe(callback);
             d.write('Re-L');
             var value = msgLog[0];
@@ -107,7 +107,7 @@ describe('Lain', function(){
     it('can drop subscriptions to data', function(){
 
         resetLog();
-        var d = world.demandData('ergo');
+        var d = world.data('ergo');
         d.subscribe(callback);
         d.write('Re-L');
         d.drop(callback);
@@ -122,7 +122,7 @@ describe('Lain', function(){
 
         resetLog();
         world.clear();
-        var d = world.demandData('ergo');
+        var d = world.data('ergo');
         d.subscribe(callback);
         d.write('Vincent');
         d.write('Re-L');
@@ -138,7 +138,7 @@ describe('Lain', function(){
 
             resetLog();
             world.clear();
-            var d = world.demandData('ergo');
+            var d = world.data('ergo');
             d.subscribe(callback, 'arcology');
             d.write('Vincent', 'character');
             d.write('Re-L', 'character');
@@ -155,7 +155,7 @@ describe('Lain', function(){
 
         resetLog();
         world.clear();
-        var d = world.demandData('ergo');
+        var d = world.data('ergo');
         d.subscribe(callback, 'arcology');
         d.write('Vincent', 'character');
         d.write('Re-L', 'character');
@@ -174,7 +174,7 @@ describe('Lain', function(){
 
         resetLog();
         world.clear();
-        var d = world.demandData('ergo');
+        var d = world.data('ergo');
 
         d.write('Vincent', 'character');
         d.write('Re-L', 'character');
@@ -192,7 +192,7 @@ describe('Lain', function(){
 
         resetLog();
         world.clear();
-        var d = world.demandData('ergo');
+        var d = world.data('ergo');
 
         d.write('Vincent', 'character');
         d.write('Re-L', 'character');
@@ -210,7 +210,7 @@ describe('Lain', function(){
 
             resetLog();
             world.clear();
-            var d = world.demandData('ergo');
+            var d = world.data('ergo');
             d.monitor(callback);
             d.write('Vincent', 'character');
             d.write('Re-L', 'character');
@@ -233,9 +233,9 @@ describe('Lain', function(){
         var city1 = world.createChild();
         var city2 = world.createChild();
 
-        var d0 = world.demandData('ergo');
-        var d1 = city1.demandData('ergo');
-        var d2 = city2.demandData('proxy');
+        var d0 = world.data('ergo');
+        var d1 = city1.data('ergo');
+        var d2 = city2.data('proxy');
 
         d0.write('0');
         d1.write('1');
@@ -255,9 +255,9 @@ describe('Lain', function(){
         var city1 = world.createChild();
         var city2 = world.createChild();
 
-        var d0 = world.demandData('ergo');
-        var d1 = city1.demandData('ergo');
-        var d2 = city2.demandData('proxy');
+        var d0 = world.data('ergo');
+        var d1 = city1.data('ergo');
+        var d2 = city2.data('proxy');
 
         d0.write('0');
         d1.write('1');
@@ -278,8 +278,8 @@ describe('Lain', function(){
 
         var city1 = world.createChild();
 
-        var d0 = world.demandAction('ergo');
-        var d1 = city1.demandData('ergo');
+        var d0 = world.action('ergo');
+        var d1 = city1.data('ergo');
 
         d0.subscribe(callback);
 
@@ -304,12 +304,12 @@ describe('Lain', function(){
         var city1 = world.createChild();
         var city2 = world.createChild();
 
-        var d0 = world.demandData('ergo');
-        var d1 = city1.demandData('ergo');
-        var d2 = city2.demandData('proxy');
+        var d0 = world.data('ergo');
+        var d1 = city1.data('ergo');
+        var d2 = city2.data('proxy');
 
-        var d3 = world.demandData('Re-L');
-        world.addValve('Re-L');
+        var d3 = world.data('Re-L');
+        world.valve('Re-L');
 
         d0.write('0');
         d1.write('1');
@@ -340,15 +340,15 @@ describe('Lain', function(){
         var city1 = world.createChild();
         var city2 = world.createChild();
 
-        var d0 = world.demandData('ergo');
-        var d1 = city1.demandData('ergo');
-        var d2 = city2.demandData('proxy');
+        var d0 = world.data('ergo');
+        var d1 = city1.data('ergo');
+        var d2 = city2.data('proxy');
 
         d0.write('0');
         d1.write('1');
         d2.write('2');
 
-        world.addMirror('ergo');
+        world.mirror('ergo');
 
         var f1 = city1.findData('ergo');
         var f2 = city2.findData('ergo');
@@ -358,6 +358,9 @@ describe('Lain', function(){
         assert.equal(f1.read(), '1');
         assert.equal(f2.read(), '3');
         assert.equal(f2.readOnly, true);
+
+        var v1 = city1.readDataSet(['ergo', 'proxy']);
+        var v2 = city2.readDataSet(['ergo', 'proxy']);
 
         var writeToMirror = function(){ f2.write('4');};
 
@@ -372,8 +375,8 @@ describe('Lain', function(){
 
         var city1 = world.createChild();
 
-        var d0 = world.demandState('ergo'); // creates a mirror under the hood
-        var d1 = city1.demandData('proxy');
+        var d0 = world.state('ergo'); // creates a mirror under the hood
+        var d1 = city1.data('proxy');
 
         d0.write('0');
         d1.write('1');

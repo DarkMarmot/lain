@@ -21,20 +21,22 @@
     "use strict";
 
     var idCounter = 0;
+    //
+    //function Lain(){
+    //    this._root = new Scope('LAIN');
+    //}
+    //
+    //var Lp = Lain.prototype;
+    //
+    //Lp.createChild = function(name){
+    //    return this._root.createChild(name);
+    //};
+    //
+    //Lp.clear = function(){
+    //    this._root.clear();
+    //};
 
-    function Lain(){
-        this._root = new Scope('LAIN');
-    }
-
-    var Lp = Lain.prototype;
-
-    Lp.createChild = function(name){
-        return this._root.createChild(name);
-    };
-
-    Lp.clear = function(){
-        this._root.clear();
-    };
+    var Lain = new Scope('LAIN');
 
     function Packet(msg, topic, source){
 
@@ -62,14 +64,14 @@
 
     var Sp = Scope.prototype;
 
-    // assign an object to be destroyed with this scope
+    // set an object as residing in this scope (to be destroyed with it)
     // it should have a destructor method (by default destroy or dispose will be called)
     // you can specify a method by name (string) or via a reference function
 
-    Sp.assign = function(destructible, method){
+    Sp.reside = function(destructible, method){
 
         if(typeof  destructible !== 'object' && typeof  destructible !== 'function'){
-            throw new Error('Scope.assign requires an object with a destroy of dispose method.');
+            throw new Error('Scope.reside requires an object with a destroy of dispose method.');
         }
 
         if(typeof method === 'string'){
@@ -81,7 +83,7 @@
         }
 
         if(!method || typeof  method !== 'function'){
-            throw new Error('Scope.assign requires an object with a destroy of dispose method.');
+            throw new Error('Scope.reside requires an object with a destroy of dispose method.');
         }
 
         this.destructibles.push(destructible);
@@ -129,7 +131,7 @@
     };
 
     // wipes everything in the scope, reset and ready for new data and children
-    Sp.clear = function(toDestroy){
+    Sp.clear = function(){
 
         this._destroyContents();
         this._reset();
@@ -211,39 +213,35 @@
     };
 
 
-    Sp.addValve = function(name, dimension){
+    Sp.valve = function(name, dimension){
 
         dimension = dimension || 'data';
         var valves = this.valves[dimension] = this.valves[dimension] || {};
-        valves[name] = true;
+        return valves[name] = true;
 
-        return this;
     };
 
 
-    Sp.addMirror = function(name, dimension){
+    Sp.mirror = function(name, dimension){
 
         dimension = dimension || 'data';
         var mirrors = this.mirrors[dimension] = this.mirrors[dimension] || {};
+
+        var existingMirror = mirrors[name];
+        if(existingMirror)
+            return existingMirror;
+
         var original = this.findData(name, dimension);
+        return mirrors[name] = new Mirror(this, original);
 
-        mirrors[name] = new Mirror(this, original);
-
-        return this;
 
     };
 
 
-    Sp.demandDimension = function(dimension){
-
-        return this.dimensions[dimension] = this.dimensions[dimension] || {};
-
-    };
-
-    Sp.demandData = function(name, dimension, ephemeral){
+    Sp.data = function(name, dimension, ephemeral){
 
         dimension = dimension || 'data';
-        var dataByName = this.demandDimension(dimension);
+        var dataByName = this.dimensions[dimension] = this.dimensions[dimension] || {};
         var data = dataByName[name];
 
         if(!data) {
@@ -258,14 +256,14 @@
     };
 
 
-    Sp.demandAction = function(name, dimension){
-        return this.demandData(name, dimension, true);
+    Sp.action = function(name, dimension){
+        return this.data(name, dimension, true);
     };
 
 
-    Sp.demandState = function(name, dimension){
-        var d = this.demandData(name, dimension);
-        this.addMirror(name, dimension);
+    Sp.state = function(name, dimension){
+        var d = this.data(name, dimension);
+        this.mirror(name, dimension);
         return d;
     };
 
@@ -289,9 +287,9 @@
         var result = {};
         for(var name in dataSet){
             var d = dataSet[name];
-            var last = d && d.peek();
-            if(last)
-                result[name] = d.msg;
+            var lastPacket = d && d.peek();
+            if(lastPacket)
+                result[name] = lastPacket.msg;
         }
 
         return result;
@@ -478,7 +476,7 @@
 
     var Data = function(scope, name, dimension, ephemeral) {
 
-        scope.assign(this, this.destroy);
+        scope.reside(this, this.destroy);
         this.scope = scope;
         this.ephemeral = !!ephemeral;
         this._name = name;
@@ -616,7 +614,7 @@
 
     var Mirror = function(scope, data){
 
-        scope.assign(this, this.destroy);
+        scope.reside(this, this.destroy);
         this.scope = scope;
         this.readOnly = true;
         this._name = data.name;
