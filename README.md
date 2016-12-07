@@ -36,12 +36,13 @@ buttonScope.find('country').read(); // returns 'Japan'
 
 ```
 
-Scopes can override variables, blocking access to variables of the same name in higher scopes, as is typical in most programming languages.
+Scopes can override `Data` instances, blocking access to `Data` of the same name in higher scopes, as is typical in most programming languages.
 
 ```javascript
 
 pageScope.data('country').write('Russia');
-buttonScope.find('country').read(); // returns 'Russia' now
+appScope.data('country').write('Argentina');
+buttonScope.find('country').read(); // returns 'Russia' since pageScope is found before the appScope
 
 ```
 
