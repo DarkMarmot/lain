@@ -1,7 +1,29 @@
 # Lain.js
 
-An in-memory data store that supports unidirectional data-flow with a tree hierarchy of dynamic, observable scopes. Subscriptions are mediated through 'inversion of access' (where encapsulation is defined from above).
-Designed for client or server usage.
+Lain is an in-memory data store whose structure is composed at run-time. It is most suitable for applications that are composed incrementally with extremely loose-coupling and many external modules.
+
+Lain is primarily designed to be used as a library for other libraries (as it lacks any advanced data-flow or data-binding mechanisms). Lain does have a simple pub/sub system available, though.
+
+It acts as tree of observable scopes. Instead of relying on functional or lexical scopes inherent to a programming language, Lain lets you create a scope hierarchy on the fly. This allows the simple creation of component or module-based scopes.
+
+Scopes can redefine variable, blocking access to variables of the same name in higher scopes, as is typical in most programming languages.
+
+Additionally, scopes can specify that variables (represented via the Data class) act as states or actions.
+
+States can be updated in their local scope and are read-only from lower scopes.
+
+Actions can be updated such that they emit their values, but they do not retain them and are thus stateless.
+
+The default Data instance allows read and write access from its local and descendant scopes.
+
+Every Data instance can treated as a discrete value or as a full pub/sub channel with subscriptions or values available by topic (via the `subscribe` method). The `follow` method acts just like `subscribe` but will also emit the current state of the `Data` instance if it has been written to previously.
+Updates across all topics (essential for debugging this pattern) can be accessed using the `monitor` method (basically a wildcard subscription).
+
+To limit the logical access of child scopes (possibly acting as a sandbox for loaded content), a scope can declare a white-list of variable names available to its descendants (referred to as valves).
+Valves allow subscriptions to be mediated through 'inversion of access' (where encapsulation is declared from above).
+
+To create parallel hierarchies of data with the same inherent structure but different access properties (useful for separating things like source file information, api methods, etc.), scopes can declare that Data elements reside in a specific dimension (like a namespace of sorts).
+
 
 ## Usage
 Install the module with: `npm install lain-js` or place into your `package.json`
