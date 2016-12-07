@@ -38,11 +38,22 @@ buttonScope.find('country').read(); // returns 'Japan'
 
 Scopes can override `Data` instances, blocking access to `Data` of the same name in higher scopes, as is typical in most programming languages.
 
+
 ```javascript
 
 pageScope.data('country').write('Russia');
 appScope.data('country').write('Argentina');
 buttonScope.find('country').read(); // returns 'Russia' since pageScope is found before the appScope
+buttonScope.find('country').write('France'); // can overwrite the stored value
+
+```
+
+The default Data instance allows read and write access from its local and descendant scopes.
+
+```javascript
+
+buttonScope.find('country').write('France'); // can overwrite the stored value
+menuScope.find('country').read(); // returns 'France' now when accessed from a sister scope
 
 ```
 
@@ -83,7 +94,6 @@ menuScope.find('navigate').peek(); // returns `null`
 
 ```
 
-The default Data instance allows read and write access from its local and descendant scopes.
 
 Every Data instance can treated as a discrete value or as a full pub/sub channel with subscriptions or values available by topic (via the `subscribe` method). The `follow` method acts just like `subscribe` but will also emit the current state of the `Data` instance (if present) when invoked.
 Updates across all topics (essential for debugging this pattern) can be accessed using the `monitor` method (basically a wildcard subscription).
@@ -140,8 +150,9 @@ Create a `Scope` from Lain (which is the root `Scope`) or another `Scope` using 
 * `clear()` Destroys all elements and children within the scope, effectively resetting it.
 * `destroy()` Destroys the scope and everything within it.
 * `data(name, [dimension])` Gets or creates a local `Data` instance with the given name.
-* `action(name, [dimension])` Gets or creates a local `Data` instance. It is stateless and will emit but not store values.
-* `state(name, [dimension])` Gets or creates a local `Data` instance. It is read-only when accessed from any child scope.
+* `action(name, [dimension])` Gets or creates a local `Data` instance configured as an action. It is stateless and will emit but not store values.
+* `state(name, [dimension])` Gets or creates a local `Data` instance configured as a state. It is read-only when accessed from any child scope.
+* `grab(name, [dimension])` Returns a local `Data` instance (data, state or action) or `null` if not present.
 * `find(name, [dimension])` Searches for a `Data` instance in the current scope and then continues searching up the scope tree.
 Returns `null` if no matches are found or if the search is blocked by a valve.
 * `reside(destructible, [destructor])` Ties the lifecycle of a destructible object to the scope. When the scope is destroyed or cleared,

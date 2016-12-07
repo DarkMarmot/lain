@@ -370,7 +370,7 @@
 
         dimension = dimension || 'data';
 
-        var localData = this.findLocal(name, dimension);
+        var localData = this.grab(name, dimension);
         if(localData)
             return localData;
 
@@ -392,7 +392,7 @@
             if(mirroredData)
                 return mirroredData;
 
-            var d = scope.findLocal(name, dimension);
+            var d = scope.grab(name, dimension);
             if(d)
                 return d;
 
@@ -403,7 +403,7 @@
     };
 
 
-    Sp.findLocal = function(name, dimension) {
+    Sp.grab = function(name, dimension) {
 
         dimension = dimension || 'data';
         var dataByName = this.dimensions[dimension];
