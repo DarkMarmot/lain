@@ -66,14 +66,14 @@ Create a `Scope` from Lain (which is the root `Scope`) or another `Scope` using 
 
 #### Methods
 
-* `createChild([name])` Create a new child scope.
-* `children()` Returns an array (shallow copy) of child scopes.
+* `createChild([name])` Create a new child scope. The name property is just cosmetic (for debugging).
+* `children([dimension])` Returns an array (shallow copy) of child scopes.
 * `clear()` Destroys all elements and children within the scope, effectively resetting it.
 * `destroy()` Destroys the scope and everything within it.
-* `data(name)` Gets or creates a local `Data` instance with the given name.
-* `action(name)` Gets or creates a local `Data` instance. It is stateless and will emit but not store values.
-* `state(name)` Gets or creates a local `Data` instance. It is read-only when accessed from any child scope.
-* `find(name)` Searches for a `Data` instance in the current scope and then continues searching up the scope tree.
+* `data(name, [dimension])` Gets or creates a local `Data` instance with the given name.
+* `action(name, [dimension])` Gets or creates a local `Data` instance. It is stateless and will emit but not store values.
+* `state(name, [dimension])` Gets or creates a local `Data` instance. It is read-only when accessed from any child scope.
+* `find(name, [dimension])` Searches for a `Data` instance in the current scope and then continues searching up the scope tree.
 Returns `null` if no matches are found or if the search is blocked by a valve.
 * `reside(destructible, [destructor])` Ties the lifecycle of a destructible object to the scope. When the scope is destroyed or cleared,
 the destructible's destroy (or dispose as a fallback) method will be called. An alternate destructor method can be specified as well.
@@ -81,13 +81,10 @@ the destructible's destroy (or dispose as a fallback) method will be called. An 
 * `insertParent(scope)` Inserts a scope between this scope and its parent scope.
 * `setParent(scope)` Assigns a parent scope to the current scope, removing its original parent (if any).
 Scopes can be orphan via setParent(null).
-* `flatten()` Creates a hash of all `Data` instances accessible to the current scope.
-* `here()` Creates a hash of all `Data` instances in the current scope. (not yet implemented)
-* `findDataSet(names)` Creates a hash of `Data` instances found through the current scope using the given names.
-* `readDataSet(names)` Like findDataSet -- but returns the message values instead of the `Data` instances.
-
-
-
+* `flatten([dimension])` Creates a hash of all `Data` instances accessible to the current scope.
+* `here([dimension])` Creates a hash of all `Data` instances in the current scope. (not yet implemented)
+* `findDataSet(names, [dimension])` Creates a hash of `Data` instances found through the current scope using the given names.
+* `readDataSet(names, [dimension])` Like findDataSet -- but returns the message values instead of the `Data` instances.
 
 
 ### Class: Data
@@ -96,13 +93,13 @@ Something about the Data class.
 
 #### Methods
 
-* `read([topic])`
-* `write(msg, [topic])`
-* `toggle([topic])`
-* `refresh([topic])`
-* `subscribe([topic])`
-* `follow([topic])`
-* `monitor()`
+* `read([topic])` Returns the last `msg` written to the topic (or `undefined` if never used).
+* `write(msg, [topic])` Write a `msg` value to be stored (on the topic if specified). This will immediately notify any subscribers.
+* `toggle([topic])` Toggles the boolean `msg` value of the instance (writing `!msg`).
+* `refresh([topic])` Notifies all subscribers of the current `msg` value.
+* `subscribe(watcher, [topic])` Subscribes to the `Data` instance. `watcher` can be a function or object with a `tell` method like `function(msg, packet)`.
+* `follow(watcher, [topic])` Subscribes and immediately emits the current `msg` and `packet` values if present.
+* `monitor(watcher)` Subscribes to all topics on the `Data` instance (including topics added later).
 
 
 ### Class: Packet
