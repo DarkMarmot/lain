@@ -251,7 +251,7 @@
             data = new Data(this, name, dimension, ephemeral);
             dataByName[name] = data;
 
-        }
+        } // todo else if action or state barf
 
         return data;
 
@@ -259,11 +259,13 @@
 
 
     Sp.action = function(name, dimension){
+        // todo else if data or state barf
         return this.data(name, dimension, true);
     };
 
 
     Sp.state = function(name, dimension){
+        // todo else if mirror or data barf
         var d = this.data(name, dimension);
         this.mirror(name, dimension);
         return d;
