@@ -117,7 +117,7 @@ The `follow` method acts just like `subscribe` but will also emit the current st
 
 ```javascript
 
-fields.subscribe('animal', function(msg, packet){
+fields.follow('animal', function(msg, packet){
     console.log(msg, packet.topic);
 };
 // the callback is invoked immediately with the existing values
