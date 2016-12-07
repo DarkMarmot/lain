@@ -10,19 +10,19 @@ Scopes can override variables, blocking access to variables of the same name in 
 
 Additionally, scopes can specify that variables (represented via the Data class) act as states or actions.
 
-States can be updated in their local scope and are read-only from lower scopes.
+States can only be updated in their local scope and are read-only from lower scopes.
 
 Actions can be updated such that they emit their values, but they do not retain them and are thus stateless.
 
 The default Data instance allows read and write access from its local and descendant scopes.
 
-Every Data instance can treated as a discrete value or as a full pub/sub channel with subscriptions or values available by topic (via the `subscribe` method). The `follow` method acts just like `subscribe` but will also emit the current state of the `Data` instance if it has been written to previously.
+Every Data instance can treated as a discrete value or as a full pub/sub channel with subscriptions or values available by topic (via the `subscribe` method). The `follow` method acts just like `subscribe` but will also emit the current state of the `Data` instance (if present) when invoked.
 Updates across all topics (essential for debugging this pattern) can be accessed using the `monitor` method (basically a wildcard subscription).
 
-To limit the logical access of child scopes (possibly acting as a sandbox for loaded content), a scope can declare a white-list of variable names available to its descendants (referred to as valves).
+To sandbox its descendant scopes, a scope can declare a white-list of available variable names (referred to as valves).
 Valves allow subscriptions to be mediated through 'inversion of access' (where encapsulation is declared from above).
 
-To create parallel hierarchies of data with the same inherent structure but different access properties (useful for separating things like source file information, api methods, etc.), scopes can declare that Data elements reside in a specific dimension (like a namespace of sorts).
+To create parallel hierarchies of data with the same inherent structure but different access properties (useful for separating things like source file information, api methods, etc.), scopes can declare that Data elements reside in a specific dimension (like a namespace of sorts). Valves can be defined separately for each dimension.
 
 
 ## Usage
