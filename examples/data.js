@@ -9,7 +9,7 @@ var widgetScope = pageScope.createChild();
 appScope.data('user').write('Knights of the Eastern Calculus');
 appScope.state('url').write('main');
 
-appScope.action('navigate').follow(function(msg){
+appScope.action('navigate').subscribe(function(msg){
     appScope.state('url').write(msg);
 });
 

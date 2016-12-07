@@ -6,13 +6,81 @@ It acts as tree of observable scopes. Instead of relying on functional or lexica
 
 Lain is primarily designed to be used as a library for other libraries (as it lacks data-flow or data-binding mechanisms other than pub/sub).
 
+## Usage
+
+First, let's create some scopes (imagining that they correspond to components on a web page).
+
+```javascript
+
+var appScope = Lain.createChild(); // creates a top-level scope
+var pageScope = appScope.createChild();
+var menuScope = pageScope.createChild();
+var buttonScope = pageScope.createChild();
+
+```
+
+Each of these scopes can hold named instances of the `Data` class.
+
+```javascript
+
+var country = appScope.data('country'); // returns an empty instance of class Data
+country.write('Japan'); // stores the string 'Japan'
+
+```
+
+`Data` defined in higher scopes can be accessed using `Scope.find`.
+
+```javascript
+
+buttonScope.find('country').read(); // returns 'Japan'
+
+```
+
 Scopes can override variables, blocking access to variables of the same name in higher scopes, as is typical in most programming languages.
+
+```javascript
+
+pageScope.data('country').write('Russia');
+buttonScope.find('country').read(); // returns 'Russia' now
+
+```
 
 Additionally, scopes can specify that variables (represented via the `Data` class) act as states or actions.
 
+```javascript
+
+appScope.action('navigate');
+
+var url = pageScope.state('url');
+pageScope.find('navigate').subscribe(function(msg){
+    url.write(msg + '.html');
+});
+
+```
+
 States can only be updated in their local scope and are read-only from lower scopes.
 
+```javascript
+
+pageScope.find('url').write('cat.html'); // updates successfully
+menuScope.find('url').write('cat.html'); // throws an Error since it is read-only from the child scope
+
+
+```
+
 Actions can be updated such that they emit their values, but they do not retain them and are thus stateless.
+
+```javascript
+
+pageScope.find('navigate').write('bunny'); // updates subscribers
+
+menuScope.find('url').read(); // returns 'cat.html'
+menuScope.find('url').peek(); // returns last Packet instance {msg, topic, source, timestamp}
+
+menuScope.find('navigate').read(); // returns `undefined`
+menuScope.find('navigate').peek(); // returns `null`
+
+```
 
 The default Data instance allows read and write access from its local and descendant scopes.
 
