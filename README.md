@@ -2,9 +2,9 @@
 
 Lain is an in-memory data store whose structure is composed at run-time. It is most suitable for applications that are composed incrementally with extremely loose-coupling and many external modules.
 
-Lain is primarily designed to be used as a library for other libraries (as it lacks any advanced data-flow or data-binding mechanisms). Lain does have a simple pub/sub system available, though.
-
 It acts as tree of observable scopes. Instead of relying on functional or lexical scopes inherent to a programming language, Lain lets you create a scope hierarchy on the fly. This allows the simple creation of component or module-based scopes.
+
+Lain is primarily designed to be used as a library for other libraries (as it lacks any advanced data-flow or data-binding mechanisms). Lain does have a simple pub/sub system available, though.
 
 Scopes can override variables, blocking access to variables of the same name in higher scopes, as is typical in most programming languages.
 
