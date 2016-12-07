@@ -94,8 +94,37 @@ menuScope.find('navigate').peek(); // returns `null`
 
 ```
 
+Every Data instance can treated as a discrete value or as a full pub/sub channel with subscriptions or values available by topic (via the `subscribe` method).
 
-Every Data instance can treated as a discrete value or as a full pub/sub channel with subscriptions or values available by topic (via the `subscribe` method). The `follow` method acts just like `subscribe` but will also emit the current state of the `Data` instance (if present) when invoked.
+```javascript
+
+var fields = appScope.data('fields');
+
+fields.write('three fields here'); // stored on the default `null` topic
+fields.write('bunny', 'animal'); // 'bunny' stored on the 'animal' topic
+fields.write('grass', 'food'); // 'bunny' stored on the 'food' topic
+
+fields.subscribe('animal', function(msg, packet){
+    console.log(msg, packet.topic);
+};
+
+// the callback is not invoked until something new is written
+fields.write('elephant', 'animal'); // writes to the console now
+
+```
+
+The `follow` method acts just like `subscribe` but will also emit the current state of the `Data` instance (if present) when invoked.
+
+```javascript
+
+fields.subscribe('animal', function(msg, packet){
+    console.log(msg, packet.topic);
+};
+// the callback is invoked immediately with the existing values
+
+```
+
+
 Updates across all topics (essential for debugging this pattern) can be accessed using the `monitor` method (basically a wildcard subscription).
 
 To sandbox its descendant scopes, a scope can declare a white-list of available variable names (referred to as valves).
