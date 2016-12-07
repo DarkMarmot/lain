@@ -6,7 +6,7 @@ Lain is primarily designed to be used as a library for other libraries (as it la
 
 It acts as tree of observable scopes. Instead of relying on functional or lexical scopes inherent to a programming language, Lain lets you create a scope hierarchy on the fly. This allows the simple creation of component or module-based scopes.
 
-Scopes can redefine variable, blocking access to variables of the same name in higher scopes, as is typical in most programming languages.
+Scopes can override variables, blocking access to variables of the same name in higher scopes, as is typical in most programming languages.
 
 Additionally, scopes can specify that variables (represented via the Data class) act as states or actions.
 
