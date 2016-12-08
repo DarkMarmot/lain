@@ -326,9 +326,9 @@
 
     // created a flattened view of all data at and above this scope
 
-    Sp.flatten = function(dimension){
+    Sp.flatten = function(){
 
-        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        var dimension = this._fixedDimension || DEFAULT_DIMENSION;
 
         var result = {};
         var whitelist = null;
@@ -427,9 +427,9 @@
     };
 
 
-    Sp.grab = function(name, dimension) {
+    Sp.grab = function(name) {
 
-        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        var dimension = this._fixedDimension || DEFAULT_DIMENSION;
         var dataByName = this._dimensions[dimension];
         if(!dataByName)
             return null;
@@ -553,7 +553,7 @@
     };
 
 
-    Dp.demandSubscriberList = function(topic){
+    Dp._demandSubscriberList = function(topic){
 
         var df = this._subscriberListsByTopic[topic];
 
@@ -578,7 +578,7 @@
 
     Dp.subscribe = function(watcher, topic){
 
-        var subscriberList = (!topic) ? this._noTopicSubscriberList : this.demandSubscriberList(topic);
+        var subscriberList = (!topic) ? this._noTopicSubscriberList : this._demandSubscriberList(topic);
         subscriberList.add(watcher);
 
     };
@@ -595,7 +595,7 @@
         if(!topic){
             this._noTopicSubscriberList.remove(watcher);
         } else {
-            var subscriberList = this.demandSubscriberList(topic);
+            var subscriberList = this._demandSubscriberList(topic);
             subscriberList.remove(watcher);
         }
         this._wildcardSubscriberList.remove(watcher);
@@ -626,7 +626,7 @@
             throw(new Error('Data from a mirror is read-only.'));
 
         if(topic) {
-            var list = this.demandSubscriberList(topic);
+            var list = this._demandSubscriberList(topic);
             list.tell(msg);
         }
         else {
