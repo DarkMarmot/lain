@@ -28,6 +28,14 @@ country.write('Japan'); // stores the string 'Japan'
 
 ```
 
+Grab a reference to a `Data` instance in the current scope with the `grab` method.
+
+```javascript
+
+var sameCountry = appScope.grab('country'); // returns the Data instance containing 'Japan'
+
+```
+
 `Data` defined in higher scopes can be accessed using `Scope.find`.
 
 ```javascript
@@ -35,6 +43,7 @@ country.write('Japan'); // stores the string 'Japan'
 buttonScope.find('country').read(); // returns 'Japan'
 
 ```
+
 
 Scopes can override `Data` instances, blocking access to `Data` of the same name in higher scopes, as is typical in most programming languages.
 
@@ -87,7 +96,11 @@ Actions can be updated such that they emit their values, but they do not retain 
 pageScope.find('navigate').write('bunny'); // updates subscribers
 
 menuScope.find('url').read(); // returns 'cat.html'
-menuScope.find('url').peek(); // returns last Packet instance {msg, topic, source, timestamp}
+
+// peek() returns the last Packet instance
+// {msg: 'cat.html', topic: null, source: 'url', timestamp: Date.now()}
+
+menuScope.find('url').peek();
 
 menuScope.find('navigate').read(); // returns `undefined`
 menuScope.find('navigate').peek(); // returns `null`
@@ -117,23 +130,70 @@ The `follow` method acts just like `subscribe` but will also emit the current st
 
 ```javascript
 
+// the callback here is invoked immediately with the stored value and the last stored Packet
 fields.follow('animal', function(msg, packet){
     console.log(msg, packet.topic);
 };
-// the callback is invoked immediately with the existing values
+
 
 ```
 
 
 Updates across all topics (essential for debugging this pattern) can be accessed using the `monitor` method (basically a wildcard subscription).
 
+```javascript
+
+fields.monitor(function(msg, packet){
+    console.log(packet.topic + ':' + msg);
+};
+
+fields.write('cat', 'animal'); // logs: 'animal:cat'
+fields.write('mice', 'food');  // logs: 'food:mice'
+fields.write('house');         // logs: 'null:house'
+
+```
+
 To sandbox its descendant scopes, a scope can declare a white-list of available variable names (referred to as valves).
 Valves allow subscriptions to be mediated through 'inversion of access' (where encapsulation is declared from above).
 
+```javascript
+
+appScope.data('color').write('red');
+appScope.data('shadow').write('blue');
+appScope.data('mixture').write('purple');
+
+pageScope.valves(['color','shadow'); // allows access to only 'color' and 'shadow' `Data` from lower scopes
+
+pageScope.find('color'); // returns the `Data` instance containing 'red'
+pageScope.find('mixture'); // returns the `Data` instance containing 'purple'
+
+buttonScope.find('color'); // returns the `Data` instance containing 'red'
+buttonScope.find('mixture'); // returns null due to the valves in pageScope
+
+
+```
+
 To create parallel hierarchies of data with the same inherent structure but different access properties (useful for separating things like source file information, api methods, etc.), scopes can declare that Data elements reside in a specific dimension (like a namespace of sorts). Valves can be defined separately for each dimension.
 
+```javascript
 
-## Usage
+appScope.data('img', 'path').write('red');
+appScope.data('shadow').write('blue');
+appScope.data('mixture').write('purple');
+
+pageScope.valves(['color','shadow'); // allows access to only 'color' and 'shadow' `Data` from lower scopes
+
+pageScope.find('color'); // returns the `Data` instance containing 'red'
+pageScope.find('mixture'); // returns the `Data` instance containing 'purple'
+
+buttonScope.find('color'); // returns the `Data` instance containing 'red'
+buttonScope.find('mixture'); // returns null due to the valves in pageScope
+
+
+```
+
+
+## Installation
 Install the module with: `npm install lain-js` or place into your `package.json`
 and run `npm install`.
 

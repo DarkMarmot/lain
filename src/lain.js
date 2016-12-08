@@ -21,6 +21,7 @@
     "use strict";
 
     var idCounter = 0;
+    var DEFAULT_DIMENSION = 'data';
 
     var Lain = new Scope('LAIN');
 
@@ -35,20 +36,40 @@
 
     function Scope(name) {
 
-        this.id = ++idCounter;
+        this._id = ++idCounter;
         this._name = name;
-        this.parent = null;
+        this._fixedDimension = null;
+        this._innerScope = null;
+        this._parent = null;
         this._children = [];
-        this.dimensions = {data: {}}; // by dimension then data name
-        this.valves = {}; // by dimension then data name
-        this.mirrors = {}; // by dimension then data name
-        this.destructibles = []; // list of items to destroy with scope
-        this.destructors = []; // list of matching destructor methods
-        this.dead = false;
+        this._dimensions = {}; // by dimension then data name
+        this._dimensions[DEFAULT_DIMENSION] = {};
+        this._valves = {}; // by dimension then data name
+        this._mirrors = {}; // by dimension then data name
+        this._destructibles = []; // list of items to destroy with scope
+        this._destructors = []; // list of matching destructor methods
+        this._dead = false;
 
     }
 
     var Sp = Scope.prototype;
+
+    Sp.dimension = function(name){
+
+        if(!name)
+            return this._fixedDimension ? this._innerScope : this;
+
+        if(this._fixedDimension){
+            this._fixedDimension = name;
+            return this;
+        } else {
+            var wrappedScope = Object.create(this);
+            wrappedScope._fixedDimension = name;
+            wrappedScope._innerScope = this;
+            return wrappedScope;
+        }
+
+    };
 
     // set an object as residing in this scope (to be destroyed with it)
     // it should have a destructor method (by default destroy or dispose will be called)
@@ -72,19 +93,19 @@
             throw new Error('Scope.reside requires an object with a destroy of dispose method.');
         }
 
-        this.destructibles.push(destructible);
-        this.destructors.push(method);
+        this._destructibles.push(destructible);
+        this._destructors.push(method);
 
     };
 
     Sp._reset = function(){
 
         this._children = [];
-        this.dimensions = {data: {}};
-        this.valves = {};
-        this.mirrors = {};
-        this.destructibles = [];
-        this.destructors = [];
+        this._dimensions = {data: {}};
+        this._valves = {};
+        this._mirrors = {};
+        this._destructibles = [];
+        this._destructors = [];
 
     };
 
@@ -107,7 +128,7 @@
 
         var i, len;
 
-        if(this.dead)
+        if(this._dead)
             return;
 
         var _children = this._children;
@@ -118,8 +139,8 @@
             child.destroy();
         }
 
-        var destructibles = this.destructibles;
-        var destructors = this.destructors;
+        var destructibles = this._destructibles;
+        var destructors = this._destructors;
 
         len = destructibles.length;
         for(i = 0; i < len; i++){
@@ -141,12 +162,12 @@
 
     Sp._nullify = function(){
 
-        this.dimensions = null;
-        this.destructibles = null;
-        this.destructors = null;
+        this._dimensions = null;
+        this._destructibles = null;
+        this._destructors = null;
         this._children = null;
-        this.valves = null;
-        this.parent = null;
+        this._valves = null;
+        this._parent = null;
 
     };
 
@@ -156,7 +177,7 @@
         this._destroyContents();
         this._nullify();
         this.setParent(null);
-        this.dead = true;
+        this._dead = true;
 
     };
 
@@ -172,7 +193,7 @@
 
     Sp.insertParent = function(newParent){
 
-        var oldParent = this.parent;
+        var oldParent = this._parent;
         newParent.setParent(oldParent);
         this.setParent(newParent);
         return this;
@@ -181,7 +202,7 @@
 
     Sp.setParent = function(newParent){
 
-        var oldParent = this.parent;
+        var oldParent = this._parent;
 
         if(oldParent === newParent)
             return;
@@ -191,7 +212,7 @@
             oldParent._children.splice(at, 1);
         }
 
-        this.parent = newParent;
+        this._parent = newParent;
 
         if(newParent) {
             newParent._children.push(this);
@@ -203,8 +224,8 @@
 
     Sp.setValves = function(names, dimension){
 
-        dimension = dimension || 'data';
-        var valves = this.valves[dimension] = this.valves[dimension] || {};
+        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        var valves = this._valves[dimension] = this._valves[dimension] || {};
         var len = names.length;
         for(var i = 0; i < len; i++){
             var name = names[i];
@@ -217,8 +238,8 @@
 
     Sp.valve = function(name, dimension){
 
-        dimension = dimension || 'data';
-        var valves = this.valves[dimension] = this.valves[dimension] || {};
+        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        var valves = this._valves[dimension] = this._valves[dimension] || {};
         return valves[name] = true;
 
     };
@@ -226,29 +247,30 @@
 
     Sp.mirror = function(name, dimension){
 
-        dimension = dimension || 'data';
-        var mirrors = this.mirrors[dimension] = this.mirrors[dimension] || {};
+        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        var mirrors = this._mirrors[dimension] = this._mirrors[dimension] || {};
 
         var existingMirror = mirrors[name];
         if(existingMirror)
             return existingMirror;
 
         var original = this.find(name, dimension);
-        return mirrors[name] = new Mirror(this, original);
-
+        var mirror = mirrors[name] = Object.create(original);
+        mirror._readOnly = true;
+        return mirror;
 
     };
 
 
-    Sp.data = function(name, dimension, ephemeral){
+    Sp.data = function(name, dimension){
 
-        dimension = dimension || 'data';
-        var dataByName = this.dimensions[dimension] = this.dimensions[dimension] || {};
+        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        var dataByName = this._dimensions[dimension] = this._dimensions[dimension] || {};
         var data = dataByName[name];
 
         if(!data) {
 
-            data = new Data(this, name, dimension, ephemeral);
+            data = new Data(this, name, dimension);
             dataByName[name] = data;
 
         } // todo else if action or state barf
@@ -260,7 +282,9 @@
 
     Sp.action = function(name, dimension){
         // todo else if data or state barf
-        return this.data(name, dimension, true);
+        var d = this.data(name, dimension);
+        d._writeOnly = true;
+        return d;
     };
 
 
@@ -304,12 +328,12 @@
 
     Sp.flatten = function(dimension){
 
-        dimension = dimension || 'data';
+        dimension = this._fixedDimension || DEFAULT_DIMENSION;
 
         var result = {};
         var whitelist = null;
 
-        var dataByName = this.dimensions[dimension] || {};
+        var dataByName = this._dimensions[dimension] || {};
         var dataName;
 
         for(dataName in dataByName){
@@ -320,11 +344,11 @@
         var valveName;
         var data;
 
-        while(scope = scope.parent){
+        while(scope = scope._parent){
 
-            dataByName = scope.dimensions[dimension] || {};
-            var valves = scope.valves[dimension];
-            var mirrors = scope.mirrors;
+            dataByName = scope._dimensions[dimension] || {};
+            var valves = scope._valves[dimension];
+            var mirrors = scope._mirrors;
             var mirrorList = mirrors[dimension];
 
             // further restrict whitelist with each set of valves
@@ -366,9 +390,9 @@
     };
 
 
-    Sp.find = function(name, dimension){
+    Sp.find = function(name){
 
-        dimension = dimension || 'data';
+        var dimension = this._fixedDimension || DEFAULT_DIMENSION;
 
         var localData = this.grab(name, dimension);
         if(localData)
@@ -376,16 +400,16 @@
 
         var scope = this;
 
-        while(scope = scope.parent){
+        while(scope = scope._parent){
 
-            var valves = scope.valves;
+            var valves = scope._valves;
             var whiteList = valves[dimension];
 
             // if a valve exists and the name is not white-listed, return null
             if(whiteList && !whiteList[name])
                 return null;
 
-            var mirrors = scope.mirrors;
+            var mirrors = scope._mirrors;
             var mirrorList = mirrors[dimension];
             var mirroredData = mirrorList && mirrorList[name];
 
@@ -405,8 +429,8 @@
 
     Sp.grab = function(name, dimension) {
 
-        dimension = dimension || 'data';
-        var dataByName = this.dimensions[dimension];
+        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        var dataByName = this._dimensions[dimension];
         if(!dataByName)
             return null;
         return dataByName[name] || null;
@@ -414,19 +438,15 @@
     };
 
 
-
-
-
     // holds subscriptions for a topic on a data element
     var SubscriberList = function(topic, data) {
 
-        this.topic = topic;
-        this.subscribers = [];
+        this._topic = topic;
+        this._subscribers = [];
         this.lastPacket = null;
         this.data = data;
-        this.ephemeral = data.ephemeral;
         this._name = data._name;
-        this.dead = false;
+        this._dead = false;
 
     };
 
@@ -434,16 +454,16 @@
 
     Slp.tell = function(msg, topic){
 
-        if(this.dead) return;
+        if(this._dead) return;
 
-        topic = topic || this.topic;
+        topic = topic || this._topic;
         var source = this._name;
         var currentPacket = new Packet(msg, topic, source);
 
-        if(!this.ephemeral)
+        if(!this.data._writeOnly)
             this.lastPacket = currentPacket;
 
-        var subscribers = [].concat(this.subscribers); // call original sensors in case subscriptions change mid loop
+        var subscribers = [].concat(this._subscribers); // call original sensors in case subscriptions change mid loop
         var len = subscribers.length;
 
         for(var i = 0; i < len; i++){
@@ -455,92 +475,92 @@
 
     Slp.destroy = function(){
 
-        if(this.dead) return;
+        if(this._dead) return;
 
-        this.subscribers = null;
+        this._subscribers = null;
         this.lastPacket = null;
-        this.dead = true;
+        this._dead = true;
 
     };
 
     Slp.add = function(watcher){
 
-        this.subscribers.push(watcher);
+        this._subscribers.push(watcher);
 
     };
 
     Slp.remove = function(watcher){
 
-        var i = this.subscribers.indexOf(watcher);
+        var i = this._subscribers.indexOf(watcher);
 
         if(i !== -1)
-            this.subscribers.splice(i, 1);
+            this._subscribers.splice(i, 1);
 
     };
 
-    var Data = function(scope, name, dimension, ephemeral) {
+    var Data = function(scope, name, dimension) {
 
         scope.reside(this, this.destroy);
-        this.scope = scope;
-        this.ephemeral = !!ephemeral;
+        this._dimension = dimension;
+        this._scope = scope;
+        this._writeOnly = false;
         this._name = name;
+        this._readOnly = false;
+        this._noTopicSubscriberList = new SubscriberList(null, this);
+        this._wildcardSubscriberList = new SubscriberList(null, this);
+        this._subscriberListsByTopic = {};
 
-        this.noTopicSubscriberList = new SubscriberList(null, this);
-        this.wildcardSubscriberList = new SubscriberList(null, this);
-
-        this.subscriberListsByTopic = {}; 
-
-        this.dead = false;
+        this._dead = false;
 
     };
 
     var Dp = Data.prototype;
 
+    Dp.dimension = function(){
+        return this._dimension;
+    };
+
     Dp.name = function(){
        return this._name;
     };
 
-    Dp.ephemeral = function(){
-        return this.ephemeral;
-    };
-
     Dp.dead = function(){
-        return this.dead;
+        return this._dead;
     };
 
     Dp.scope = function(){
-        return this.scope;
+        return this._scope;
     };
 
     Dp.destroy = function(){
 
-        if(this.dead)
+        if(this._dead)
             return;
 
-        var subscriberListsByTopic = this.subscriberListsByTopic;
+        var subscriberListsByTopic = this._subscriberListsByTopic;
         for(var topic in subscriberListsByTopic){
             var list = subscriberListsByTopic[topic];
             list.destroy();
         }
 
-        this.scope = null;
-        this.noTopicSubscriberList = null;
-        this.wildcardSubscriberList = null;
-        this.subscriberListsByTopic = null;
+        this._scope = null;
+        this._noTopicSubscriberList = null;
+        this._wildcardSubscriberList = null;
+        this._subscriberListsByTopic = null;
 
-        this.dead = true;
+        this._dead = true;
 
     };
 
 
     Dp.demandSubscriberList = function(topic){
 
-        var df = this.subscriberListsByTopic[topic];
+        var df = this._subscriberListsByTopic[topic];
 
         if(df)
             return df;
 
-        return this.subscriberListsByTopic[topic] = new SubscriberList(topic, this);
+        return this._subscriberListsByTopic[topic] = new SubscriberList(topic, this);
 
     };
 
@@ -558,14 +578,14 @@
 
     Dp.subscribe = function(watcher, topic){
 
-        var subscriberList = (!topic) ? this.noTopicSubscriberList : this.demandSubscriberList(topic);
+        var subscriberList = (!topic) ? this._noTopicSubscriberList : this.demandSubscriberList(topic);
         subscriberList.add(watcher);
 
     };
 
     Dp.monitor = function(watcher){
 
-        this.wildcardSubscriberList.add(watcher);
+        this._wildcardSubscriberList.add(watcher);
 
     };
 
@@ -573,19 +593,19 @@
     Dp.drop = function(watcher, topic){
 
         if(!topic){
-            this.noTopicSubscriberList.remove(watcher);
+            this._noTopicSubscriberList.remove(watcher);
         } else {
             var subscriberList = this.demandSubscriberList(topic);
             subscriberList.remove(watcher);
         }
-        this.wildcardSubscriberList.remove(watcher);
+        this._wildcardSubscriberList.remove(watcher);
 
     };
 
 
     Dp.peek = function(topic){
 
-        var subscriberList = topic ? this.subscriberListsByTopic[topic] : this.noTopicSubscriberList;
+        var subscriberList = topic ? this._subscriberListsByTopic[topic] : this._noTopicSubscriberList;
         if(!subscriberList)
             return null;
         return subscriberList.lastPacket;
@@ -602,15 +622,18 @@
 
     Dp.write = function(msg, topic){
 
+        if(this._readOnly)
+            throw(new Error('Data from a mirror is read-only.'));
+
         if(topic) {
             var list = this.demandSubscriberList(topic);
             list.tell(msg);
         }
         else {
-            this.noTopicSubscriberList.tell(msg);
+            this._noTopicSubscriberList.tell(msg);
         }
         
-        this.wildcardSubscriberList.tell(msg, topic);
+        this._wildcardSubscriberList.tell(msg, topic);
 
     };
 
@@ -623,61 +646,6 @@
     Dp.toggle = function(topic){
         this.write(!this.read(topic), topic);
     };
-
-    // mirrors are read-only data proxies
-
-    var Mirror = function(scope, data){
-
-        scope.reside(this, this.destroy);
-        this.scope = scope;
-        this.readOnly = true;
-        this._name = data.name;
-        this.data = data;
-
-        this.dead = false;
-    };
-
-    var Mp = Mirror.prototype;
-
-    Mp.write = function(){
-        throw(new Error('Data from a mirror is read-only.'));
-    };
-
-    Mp.read = function(topic){
-        return this.data.read(topic);
-    };
-
-    Mp.peek = function(topic){
-        return this.data.peek(topic);
-    };
-
-    Mp.drop = function(watcher, topic){
-        if(!this.data.dead)
-            this.data.drop(watcher, topic);
-        return this;
-    };
-
-    Mp.monitor = function(watcher){
-        this.data.monitor(watcher);
-        return this;
-    };
-
-    Mp.subscribe = function(watcher, topic){
-        this.data.subscribe(watcher, topic);
-        return this;
-    };
-
-    Mp.follow = function(watcher, topic){
-        this.data.follow(watcher, topic);
-        return this;
-    };
-
-    Mp.destroy = function(){
-        this.drop();
-        this.data = null;
-        this.dead = true;
-    };
-
 
 
     var plugins = typeof seele !== 'undefined' && seele;

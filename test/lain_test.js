@@ -355,7 +355,7 @@ describe('Lain', function(){
 
         assert.equal(f1.read(), '1');
         assert.equal(f2.read(), '3');
-        assert.equal(f2.readOnly, true);
+        assert.equal(f2._readOnly, true);
 
         var v1 = city1.readDataSet(['ergo', 'proxy']);
         var v2 = city2.readDataSet(['ergo', 'proxy']);
@@ -386,13 +386,47 @@ describe('Lain', function(){
 
         assert.equal(f1.read(), '3');
         assert.equal(f2.read(), '3');
-        assert.equal(f1.readOnly, true);
+        assert.equal(f1._readOnly, true);
 
         var writeToMirror = function(){ f1.write('4');};
         assert.throws(writeToMirror, Error, 'Data from a mirror is read-only.');
 
     });
 
+    it('can create data in different dimensions', function(){
+
+        resetLog();
+        world.clear();
+        var city1 = world.createChild();
+
+        world.data('ergo').write('defaultErgo');
+        world.data('proxy').write('defaultProxy');
+        city1.data('proxy').write('defaultCityProxy');
+
+        world = world.dimension('path');
+        city1 = city1.dimension('path');
+
+        var d0 = world.state('ergo').write('pathErgo');
+        var d1 = city1.data('proxy').write('pathProxy');
+
+        var f1 = city1.find('proxy');
+        var f2 = world.find('ergo');
+
+        var f3 = city1.dimension().find('ergo');
+
+        //f2.write('3'); // can write to state, affects both data and mirror
+        //
+        assert.equal(f1.read(), 'pathProxy');
+        assert.equal(f2.read(), 'pathErgo');
+        assert.equal(f3.read(), 'defaultErgo');
+
+
+        //assert.equal(f1.readOnly, true);
+        //
+        //var writeToMirror = function(){ f1.write('4');};
+        //assert.throws(writeToMirror, Error, 'Data from a mirror is read-only.');
+
+    });
 
 
 });

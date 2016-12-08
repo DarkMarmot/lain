@@ -20,5 +20,19 @@ pageScope.find('url').follow(function(msg){
 });
 
 
+var n = Date.now();
+
+for(var i = 0; i < 1000000; i++){
+    var s1 = appScope.createChild();
+    var s2 = s1.dimension();
+    if(s1 !== s2){
+        console.log('argh');
+        break;
+    }
+}
+
+console.log('diff', (Date.now()-n));
+
+
 var flatScope = widgetScope.flatten();
 console.log(Object.keys(flatScope));
