@@ -173,13 +173,35 @@ buttonScope.find('mixture'); // returns null due to the valves in pageScope
 
 ```
 
-To create parallel hierarchies of data with the same inherent structure but different access properties (useful for separating things like source file information, api methods, etc.), scopes can declare that Data elements reside in a specific dimension (like a namespace of sorts). Valves can be defined separately for each dimension.
+To create parallel hierarchies of data with the same inherent structure but different access properties (useful for separating things like source file information, styles, api methods, etc.), scopes can declare that Data elements reside in a specific dimension (like a namespace of sorts). Valves can be defined separately for each dimension.
 
 ```javascript
 
-appScope.data('img', 'path').write('red');
-appScope.data('shadow').write('blue');
-appScope.data('mixture').write('purple');
+// this returns an appScope instance that accesses data stored in a 'style' namespace
+var styles = appScope.dimension('style');
+
+styles.data('shadow').write('blue');
+
+buttonScope.find('shadow'); // returns null
+buttonScope.dimension('style').find('shadow'); // returns the `Data` instance containing 'blue'
+
+
+```
+
+Valves can be configured separately for each dimension, allowing flexible white-listing.
+
+```javascript
+
+// this returns an appScope instance that accesses data stored in a 'style' namespace
+var styles = appScope.dimension('style');
+
+styles.data('background').write('red');
+styles.data('shadow').write('blue');
+styles.data('mixture').write('purple');
+
+buttonScope.find('shadow'); // returns null
+buttonScope.dimension('style').find('shadow'); // returns the `Data` instance containing 'blue'
+
 
 pageScope.valves(['color','shadow'); // allows access to only 'color' and 'shadow' `Data` from lower scopes
 
@@ -238,11 +260,11 @@ Create a `Scope` from Lain (which is the root `Scope`) or another `Scope` using 
 * `children()` Returns an array (shallow copy) of child scopes.
 * `clear()` Destroys all elements and children within the scope, effectively resetting it.
 * `destroy()` Destroys the scope and everything within it.
-* `data(name)` Gets or creates a local `Data` instance with the given name.
-* `action(name)` Gets or creates a local `Data` instance configured as an action. It is stateless and will emit but not store values.
-* `state(name)` Gets or creates a local `Data` instance configured as a state. It is read-only when accessed from any child scope.
-* `grab(name)` Returns a local `Data` instance (data, state or action) or `null` if not present.
-* `find(name)` Searches for a `Data` instance in the current scope and then continues searching up the scope tree.
+* `data(name, [dimension])` Gets or creates a local `Data` instance with the given name.
+* `action(name, [dimension])` Gets or creates a local `Data` instance configured as an action. It is stateless and will emit but not store values.
+* `state(name, [dimension])` Gets or creates a local `Data` instance configured as a state. It is read-only when accessed from any child scope.
+* `grab(name, [dimension])` Returns a local `Data` instance (data, state or action) or `null` if not present.
+* `find(name, [dimension])` Searches for a `Data` instance in the current scope and then continues searching up the scope tree.
 Returns `null` if no matches are found or if the search is blocked by a valve.
 * `reside(destructible, [destructor])` Ties the lifecycle of a destructible object to the scope. When the scope is destroyed or cleared,
 the destructible's destroy (or dispose) method will be called. An alternate destructor method can be specified as well.
@@ -250,10 +272,10 @@ the destructible's destroy (or dispose) method will be called. An alternate dest
 * `insertParent(scope)` Inserts a scope between this scope and its parent scope.
 * `setParent(scope)` Assigns a parent scope to the current scope, removing its original parent (if any).
 Scopes can be orphan via setParent(null).
-* `flatten()` Creates a hash of all `Data` instances accessible to the current scope.
-* `here()` Creates a hash of all `Data` instances in the current scope. (not yet implemented)
-* `findDataSet(names)` Creates a hash of `Data` instances found through the current scope using the given names.
-* `readDataSet(names)` Like findDataSet -- but returns the message values instead of the `Data` instances.
+* `flatten([dimension])` Creates a hash of all `Data` instances accessible to the current scope.
+* `here([dimension])` Creates a hash of all `Data` instances in the current scope. (not yet implemented)
+* `findDataSet(names, [dimension])` Creates a hash of `Data` instances found through the current scope using the given names.
+* `readDataSet(names, [dimension])` Like findDataSet -- but returns the message values instead of the `Data` instances.
 * `dimension([name])` Returns the current scope with a wrapper accessing the specified dimension.
 
 
@@ -270,6 +292,10 @@ Something about the Data class.
 * `subscribe(watcher, [topic])` Subscribes to the `Data` instance. `watcher` can be a function or object with a `tell` method like `function(msg, packet)`.
 * `follow(watcher, [topic])` Subscribes and immediately emits the current `msg` and `packet` values if present.
 * `monitor(watcher)` Subscribes to all topics on the `Data` instance (including topics added later).
+* `name()` Returns the instance name
+* `dimension()` Returns the dimension (defaults to 'data')
+* `dead()` Returns true if the instance has been destroyed.
+* `destroy()` Removes and destroys the instance and its subscriptions
 
 
 ### Class: Packet

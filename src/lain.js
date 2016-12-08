@@ -224,7 +224,7 @@
 
     Sp.setValves = function(names, dimension){
 
-        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
         var valves = this._valves[dimension] = this._valves[dimension] || {};
         var len = names.length;
         for(var i = 0; i < len; i++){
@@ -238,7 +238,7 @@
 
     Sp.valve = function(name, dimension){
 
-        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
         var valves = this._valves[dimension] = this._valves[dimension] || {};
         return valves[name] = true;
 
@@ -247,7 +247,7 @@
 
     Sp.mirror = function(name, dimension){
 
-        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
         var mirrors = this._mirrors[dimension] = this._mirrors[dimension] || {};
 
         var existingMirror = mirrors[name];
@@ -264,7 +264,7 @@
 
     Sp.data = function(name, dimension){
 
-        dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
         var dataByName = this._dimensions[dimension] = this._dimensions[dimension] || {};
         var data = dataByName[name];
 
@@ -298,6 +298,8 @@
 
     Sp.findDataSet = function(names, dimension){
 
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
+
         var len = names.length;
         var result = {};
         for(var i = 0; i < len; i++){
@@ -326,9 +328,9 @@
 
     // created a flattened view of all data at and above this scope
 
-    Sp.flatten = function(){
+    Sp.flatten = function(dimension){
 
-        var dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
 
         var result = {};
         var whitelist = null;
@@ -390,9 +392,9 @@
     };
 
 
-    Sp.find = function(name){
+    Sp.find = function(name, dimension){
 
-        var dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
 
         var localData = this.grab(name, dimension);
         if(localData)
@@ -427,9 +429,9 @@
     };
 
 
-    Sp.grab = function(name) {
+    Sp.grab = function(name, dimension) {
 
-        var dimension = this._fixedDimension || DEFAULT_DIMENSION;
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
         var dataByName = this._dimensions[dimension];
         if(!dataByName)
             return null;
