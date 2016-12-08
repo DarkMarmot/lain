@@ -276,7 +276,7 @@ Scopes can be orphan via setParent(null).
 * `here([dimension])` Creates a hash of all `Data` instances in the current scope. (not yet implemented)
 * `findDataSet(names, [dimension])` Creates a hash of `Data` instances found through the current scope using the given names.
 * `readDataSet(names, [dimension])` Like findDataSet -- but returns the message values instead of the `Data` instances.
-* `dimension([name])` Returns the current scope with a wrapper accessing the specified dimension.
+* `dimension([name])` Returns the current scope with a wrapper accessing the specified dimension as its default.
 
 
 ### Class: Data
@@ -300,13 +300,15 @@ Something about the Data class.
 
 ### Class: Packet
 
-Something about the Data class.
+All writes made against `Data` instances are stored and/or emitted as both a `Packet` envelope and the original value of the write message
+ itself (the 'msg' property in the `Packet`). The full `Packet` can be inspected using the `Data.peek` method. It is also sent as the second argument
+  of all subscription callbacks.
 
 #### Properties
 
 * `msg` Message content written to a `Data` instance.
 * `topic` Subscription topic that created the packet (the default is `null`).
-* `source` Name of the `Data` instance that created the packet.
+* `source` Name of the `Data` instance that stored or emitted the packet.
 * `timestamp` Date.now() when created.
 
 
