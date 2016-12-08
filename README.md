@@ -235,25 +235,26 @@ Create a `Scope` from Lain (which is the root `Scope`) or another `Scope` using 
 #### Methods
 
 * `createChild([name])` Create a new child scope. The name property is just cosmetic (for debugging).
-* `children([dimension])` Returns an array (shallow copy) of child scopes.
+* `children()` Returns an array (shallow copy) of child scopes.
 * `clear()` Destroys all elements and children within the scope, effectively resetting it.
 * `destroy()` Destroys the scope and everything within it.
-* `data(name, [dimension])` Gets or creates a local `Data` instance with the given name.
-* `action(name, [dimension])` Gets or creates a local `Data` instance configured as an action. It is stateless and will emit but not store values.
-* `state(name, [dimension])` Gets or creates a local `Data` instance configured as a state. It is read-only when accessed from any child scope.
-* `grab(name, [dimension])` Returns a local `Data` instance (data, state or action) or `null` if not present.
-* `find(name, [dimension])` Searches for a `Data` instance in the current scope and then continues searching up the scope tree.
+* `data(name)` Gets or creates a local `Data` instance with the given name.
+* `action(name)` Gets or creates a local `Data` instance configured as an action. It is stateless and will emit but not store values.
+* `state(name)` Gets or creates a local `Data` instance configured as a state. It is read-only when accessed from any child scope.
+* `grab(name)` Returns a local `Data` instance (data, state or action) or `null` if not present.
+* `find(name)` Searches for a `Data` instance in the current scope and then continues searching up the scope tree.
 Returns `null` if no matches are found or if the search is blocked by a valve.
 * `reside(destructible, [destructor])` Ties the lifecycle of a destructible object to the scope. When the scope is destroyed or cleared,
-the destructible's destroy (or dispose as a fallback) method will be called. An alternate destructor method can be specified as well.
+the destructible's destroy (or dispose) method will be called. An alternate destructor method can be specified as well.
 
 * `insertParent(scope)` Inserts a scope between this scope and its parent scope.
 * `setParent(scope)` Assigns a parent scope to the current scope, removing its original parent (if any).
 Scopes can be orphan via setParent(null).
-* `flatten([dimension])` Creates a hash of all `Data` instances accessible to the current scope.
-* `here([dimension])` Creates a hash of all `Data` instances in the current scope. (not yet implemented)
-* `findDataSet(names, [dimension])` Creates a hash of `Data` instances found through the current scope using the given names.
-* `readDataSet(names, [dimension])` Like findDataSet -- but returns the message values instead of the `Data` instances.
+* `flatten()` Creates a hash of all `Data` instances accessible to the current scope.
+* `here()` Creates a hash of all `Data` instances in the current scope. (not yet implemented)
+* `findDataSet(names)` Creates a hash of `Data` instances found through the current scope using the given names.
+* `readDataSet(names)` Like findDataSet -- but returns the message values instead of the `Data` instances.
+* `dimension([name])` Returns the current scope with a wrapper accessing the specified dimension.
 
 
 ### Class: Data
