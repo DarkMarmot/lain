@@ -360,9 +360,11 @@ describe('Lain', function(){
         var v1 = city1.readDataSet(['ergo', 'proxy']);
         var v2 = city2.readDataSet(['ergo', 'proxy']);
 
-        var writeToMirror = function(){ f2.write('4');};
+        var writeToMirror = function(){ f2.write('4'); };
 
-        assert.throws(writeToMirror, Error, 'Data from a mirror is read-only.');
+        // 'bad error msg' isn't being printed for some reason
+        // figure mocha is swallowing it
+        assert.throws(writeToMirror, /Data from a mirror .* ergo/, 'bad error msg');
 
     });
 
