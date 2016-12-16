@@ -54,7 +54,7 @@ describe('Lain', function(){
 
             var d = world.data('ergo');
             var name = d.name();
-            assert.equal(name, 'ergo');
+            assert.equal(name, 'ergo2');
 
         });
 

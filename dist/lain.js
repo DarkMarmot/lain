@@ -21,20 +21,9 @@
     "use strict";
 
     var idCounter = 0;
+    var DEFAULT_DIMENSION = 'data';
 
-    function Lain(){
-        this._root = new Scope('LAIN');
-    }
-
-    var Lp = Lain.prototype;
-
-    Lp.createChild = function(name){
-        return this._root.createChild(name);
-    };
-
-    Lp.clear = function(){
-        this._root.clear();
-    };
+    var Lain = new Scope('LAIN');
 
     function Packet(msg, topic, source){
 
@@ -47,29 +36,49 @@
 
     function Scope(name) {
 
-        this.id = ++idCounter;
+        this._id = ++idCounter;
         this._name = name;
-        this.parent = null;
-        this.children = [];
-        this.dimensions = {data: {}}; // by dimension then data name
-        this.valves = {}; // by dimension then data name
-        this.mirrors = {}; // by dimension then data name
-        this.destructibles = []; // list of items to destroy with scope
-        this.destructors = []; // list of matching destructor methods
-        this.dead = false;
+        this._fixedDimension = null;
+        this._innerScope = null;
+        this._parent = null;
+        this._children = [];
+        this._dimensions = {}; // by dimension then data name
+        this._dimensions[DEFAULT_DIMENSION] = {};
+        this._valves = {}; // by dimension then data name
+        this._mirrors = {}; // by dimension then data name
+        this._destructibles = []; // list of items to destroy with scope
+        this._destructors = []; // list of matching destructor methods
+        this._dead = false;
 
     }
 
     var Sp = Scope.prototype;
 
-    // assign an object to be destroyed with this scope
+    Sp.dimension = function(name){
+
+        if(!name)
+            return this._fixedDimension ? this._innerScope : this;
+
+        if(this._fixedDimension){
+            this._fixedDimension = name;
+            return this;
+        } else {
+            var wrappedScope = Object.create(this);
+            wrappedScope._fixedDimension = name;
+            wrappedScope._innerScope = this;
+            return wrappedScope;
+        }
+
+    };
+
+    // set an object as residing in this scope (to be destroyed with it)
     // it should have a destructor method (by default destroy or dispose will be called)
     // you can specify a method by name (string) or via a reference function
 
-    Sp.assign = function(destructible, method){
+    Sp.reside = function(destructible, method){
 
         if(typeof  destructible !== 'object' && typeof  destructible !== 'function'){
-            throw new Error('Scope.assign requires an object with a destroy of dispose method.');
+            throw new Error('Scope.reside requires an object with a destroy of dispose method.');
         }
 
         if(typeof method === 'string'){
@@ -81,22 +90,37 @@
         }
 
         if(!method || typeof  method !== 'function'){
-            throw new Error('Scope.assign requires an object with a destroy of dispose method.');
+            throw new Error('Scope.reside requires an object with a destroy of dispose method.');
         }
 
-        this.destructibles.push(destructible);
-        this.destructors.push(method);
+        this._destructibles.push(destructible);
+        this._destructors.push(method);
 
     };
 
     Sp._reset = function(){
 
-        this.children = [];
-        this.dimensions = {data: {}};
-        this.valves = {};
-        this.mirrors = {};
-        this.destructibles = [];
-        this.destructors = [];
+        this._children = [];
+        this._dimensions = {data: {}};
+        this._valves = {};
+        this._mirrors = {};
+        this._destructibles = [];
+        this._destructors = [];
+
+    };
+
+    Sp.children = function(){
+
+        var result = [];
+        var _children = this._children;
+        var len = _children.length;
+
+        for(var i = 0; i < len; i++){
+            var child = _children[i];
+            result.push(child);
+        }
+
+        return result;
 
     };
 
@@ -104,19 +128,19 @@
 
         var i, len;
 
-        if(this.dead)
+        if(this._dead)
             return;
 
-        var children = this.children;
-        len = children.length;
+        var _children = this._children;
+        len = _children.length;
 
         for(i = 0; i < len; i++){
-            var child = children[i];
+            var child = _children[i];
             child.destroy();
         }
 
-        var destructibles = this.destructibles;
-        var destructors = this.destructors;
+        var destructibles = this._destructibles;
+        var destructors = this._destructors;
 
         len = destructibles.length;
         for(i = 0; i < len; i++){
@@ -128,8 +152,8 @@
 
     };
 
-    // wipes everything in the scope, reset and ready for new data and children
-    Sp.clear = function(toDestroy){
+    // wipes everything in the scope, reset and ready for new data and _children
+    Sp.clear = function(){
 
         this._destroyContents();
         this._reset();
@@ -138,12 +162,12 @@
 
     Sp._nullify = function(){
 
-        this.dimensions = null;
-        this.destructibles = null;
-        this.destructors = null;
-        this.children = null;
-        this.valves = null;
-        this.parent = null;
+        this._dimensions = null;
+        this._destructibles = null;
+        this._destructors = null;
+        this._children = null;
+        this._valves = null;
+        this._parent = null;
 
     };
 
@@ -152,45 +176,46 @@
 
         this._destroyContents();
         this._nullify();
-        this.assignParent(null);
-        this.dead = true;
+        this.setParent(null);
+        this._dead = true;
 
     };
 
-
+    
+    
     Sp.createChild = function(name){
 
         var child = new Scope(name);
-        child.assignParent(this);
+        child.setParent(this);
         return child;
 
     };
 
     Sp.insertParent = function(newParent){
 
-        var oldParent = this.parent;
-        newParent.assignParent(oldParent);
-        this.assignParent(newParent);
+        var oldParent = this._parent;
+        newParent.setParent(oldParent);
+        this.setParent(newParent);
         return this;
 
     };
 
-    Sp.assignParent = function(newParent){
+    Sp.setParent = function(newParent){
 
-        var oldParent = this.parent;
+        var oldParent = this._parent;
 
         if(oldParent === newParent)
             return;
 
         if(oldParent) {
-            var at = oldParent.children.indexOf(this);
-            oldParent.children.splice(at, 1);
+            var at = oldParent._children.indexOf(this);
+            oldParent._children.splice(at, 1);
         }
 
-        this.parent = newParent;
+        this._parent = newParent;
 
         if(newParent) {
-            newParent.children.push(this);
+            newParent._children.push(this);
         }
         
         return this;
@@ -199,8 +224,8 @@
 
     Sp.setValves = function(names, dimension){
 
-        dimension = dimension || 'data';
-        var valves = this.valves[dimension] = this.valves[dimension] || {};
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
+        var valves = this._valves[dimension] = this._valves[dimension] || {};
         var len = names.length;
         for(var i = 0; i < len; i++){
             var name = names[i];
@@ -211,95 +236,192 @@
     };
 
 
-    Sp.addValve = function(name, dimension){
+    Sp.valve = function(name, dimension){
 
-        dimension = dimension || 'data';
-        var valves = this.valves[dimension] = this.valves[dimension] || {};
-        valves[name] = true;
-
-        return this;
-    };
-
-
-    Sp.addMirror = function(name, dimension){
-
-        dimension = dimension || 'data';
-        var mirrors = this.mirrors[dimension] = this.mirrors[dimension] || {};
-        var original = this.findData(name, dimension);
-
-        mirrors[name] = new Mirror(this, original);
-
-        return this;
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
+        var valves = this._valves[dimension] = this._valves[dimension] || {};
+        return valves[name] = true;
 
     };
 
 
-    Sp.demandDimension = function(dimension){
+    Sp.mirror = function(name, dimension){
 
-        return this.dimensions[dimension] = this.dimensions[dimension] || {};
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
+        var mirrors = this._mirrors[dimension] = this._mirrors[dimension] || {};
+
+        var existingMirror = mirrors[name];
+        if(existingMirror)
+            return existingMirror;
+
+        var original = this.find(name, dimension);
+        var mirror = mirrors[name] = Object.create(original);
+        mirror._readOnly = true;
+        return mirror;
 
     };
 
-    Sp.demandData = function(name, dimension, ephemeral){
 
-        dimension = dimension || 'data';
-        var dataByName = this.demandDimension(dimension);
+    Sp.data = function(name, dimension){
+
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
+        var dataByName = this._dimensions[dimension] = this._dimensions[dimension] || {};
         var data = dataByName[name];
 
         if(!data) {
 
-            data = new Data(this, name, dimension, ephemeral);
+            data = new Data(this, name, dimension);
             dataByName[name] = data;
 
-        }
+        } // todo else if action or state barf
 
         return data;
 
     };
 
 
-    Sp.demandAction = function(name, dimension){
-        return this.demandData(name, dimension, true);
-    };
-
-
-    Sp.demandState = function(name, dimension){
-        var d = this.demandData(name, dimension);
-        this.addMirror(name, dimension);
+    Sp.action = function(name, dimension){
+        // todo else if data or state barf
+        var d = this.data(name, dimension);
+        d._writeOnly = true;
         return d;
     };
 
 
-    Sp.findData = function(name, dimension){
+    Sp.state = function(name, dimension){
+        // todo else if mirror or data barf
+        var d = this.data(name, dimension);
+        this.mirror(name, dimension);
+        return d;
+    };
 
-        dimension = dimension || 'data';
 
-        var localData = this.getData(name, dimension);
+    Sp.findDataSet = function(names, dimension){
+
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
+
+        var len = names.length;
+        var result = {};
+        for(var i = 0; i < len; i++){
+            var name = names[i];
+            result[name] = this.find(name, dimension);
+        }
+
+        return result;
+
+    };
+
+    Sp.readDataSet = function(names, dimension){
+
+        var dataSet = this.findDataSet(names, dimension);
+        var result = {};
+        for(var name in dataSet){
+            var d = dataSet[name];
+            var lastPacket = d && d.peek();
+            if(lastPacket)
+                result[name] = lastPacket.msg;
+        }
+
+        return result;
+
+    };
+
+    // created a flattened view of all data at and above this scope
+
+    Sp.flatten = function(dimension){
+
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
+
+        var result = {};
+        var whitelist = null;
+
+        var dataByName = this._dimensions[dimension] || {};
+        var dataName;
+
+        for(dataName in dataByName){
+            result[dataName] = dataByName[dataName];
+        }
+
+        var scope = this;
+        var valveName;
+        var data;
+
+        while(scope = scope._parent){
+
+            dataByName = scope._dimensions[dimension] || {};
+            var valves = scope._valves[dimension];
+            var mirrors = scope._mirrors;
+            var mirrorList = mirrors[dimension];
+
+            // further restrict whitelist with each set of valves
+
+            if(valves){
+                if(whitelist){
+                    for(valveName in whitelist){
+                        whitelist[valveName] = whitelist[valveName] && valves[valveName];
+                    }
+                } else {
+                    whitelist = {};
+                    for(valveName in valves){
+                        whitelist[valveName] = valves[valveName];
+                    }
+                }
+            }
+
+            if(whitelist){
+                for(dataName in whitelist){
+                    if(!result[dataName]) {
+                        data = (mirrorList && mirrorList[dataName]) || dataByName[dataName];
+                        result[dataName] = data;
+                    }
+                }
+            } else {
+                for(dataName in dataByName){
+                    if(!result[dataName]) {
+                        data = (mirrorList && mirrorList[dataName]) || dataByName[dataName];
+                        result[dataName] = data;
+                    }
+                }
+            }
+
+        }
+
+
+        return result;
+
+    };
+
+
+    Sp.find = function(name, dimension){
+
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
+
+        var localData = this.grab(name, dimension);
         if(localData)
             return localData;
 
-        var parent = this.parent;
+        var scope = this;
 
-        while(parent){
+        while(scope = scope._parent){
 
-            var valves = parent.valves;
+            var valves = scope._valves;
             var whiteList = valves[dimension];
 
             // if a valve exists and the name is not white-listed, return null
             if(whiteList && !whiteList[name])
                 return null;
 
-            var mirrors = parent.mirrors;
+            var mirrors = scope._mirrors;
             var mirrorList = mirrors[dimension];
             var mirroredData = mirrorList && mirrorList[name];
 
             if(mirroredData)
                 return mirroredData;
 
-            var d = parent.getData(name, dimension);
+            var d = scope.grab(name, dimension);
             if(d)
                 return d;
-            parent = parent.parent;
+
         }
 
         return null;
@@ -307,10 +429,10 @@
     };
 
 
-    Sp.getData = function(name, dimension) {
+    Sp.grab = function(name, dimension) {
 
-        dimension = dimension || 'data';
-        var dataByName = this.dimensions[dimension];
+        dimension = dimension || this._fixedDimension || DEFAULT_DIMENSION;
+        var dataByName = this._dimensions[dimension];
         if(!dataByName)
             return null;
         return dataByName[name] || null;
@@ -318,17 +440,15 @@
     };
 
 
-
     // holds subscriptions for a topic on a data element
     var SubscriberList = function(topic, data) {
 
-        this.topic = topic;
-        this.subscribers = [];
+        this._topic = topic;
+        this._subscribers = [];
         this.lastPacket = null;
         this.data = data;
-        this.ephemeral = data.ephemeral;
         this._name = data._name;
-        this.dead = false;
+        this._dead = false;
 
     };
 
@@ -336,16 +456,16 @@
 
     Slp.tell = function(msg, topic){
 
-        if(this.dead) return;
+        if(this._dead) return;
 
-        topic = topic || this.topic;
+        topic = topic || this._topic;
         var source = this._name;
         var currentPacket = new Packet(msg, topic, source);
 
-        if(!this.ephemeral)
+        if(!this.data._writeOnly)
             this.lastPacket = currentPacket;
 
-        var subscribers = [].concat(this.subscribers); // call original sensors in case subscriptions change mid loop
+        var subscribers = [].concat(this._subscribers); // call original sensors in case subscriptions change mid loop
         var len = subscribers.length;
 
         for(var i = 0; i < len; i++){
@@ -357,128 +477,137 @@
 
     Slp.destroy = function(){
 
-        if(this.dead) return;
+        if(this._dead) return;
 
-        this.subscribers = null;
+        this._subscribers = null;
         this.lastPacket = null;
-        this.dead = true;
+        this._dead = true;
 
     };
 
     Slp.add = function(watcher){
 
-        this.subscribers.push(watcher);
+        this._subscribers.push(watcher);
 
     };
 
     Slp.remove = function(watcher){
 
-        var i = this.subscribers.indexOf(watcher);
+        var i = this._subscribers.indexOf(watcher);
 
         if(i !== -1)
-            this.subscribers.splice(i, 1);
+            this._subscribers.splice(i, 1);
 
     };
 
-    var Data = function(scope, name, dimension, ephemeral) {
+    var Data = function(scope, name, dimension) {
 
-        scope.assign(this, this.destroy);
-        this.scope = scope;
-        this.ephemeral = !!ephemeral;
+        scope.reside(this, this.destroy);
+        this._dimension = dimension;
+        this._scope = scope;
+        this._writeOnly = false;
         this._name = name;
+        this._readOnly = false;
+        this._noTopicSubscriberList = new SubscriberList(null, this);
+        this._wildcardSubscriberList = new SubscriberList(null, this);
+        this._subscriberListsByTopic = {};
 
-        this.noTopicSubscriberList = new SubscriberList(null, this);
-        this.wildcardSubscriberList = new SubscriberList(null, this);
-
-        this.subscriberListsByTopic = {}; 
-
-        this.dead = false;
+        this._dead = false;
 
     };
 
     var Dp = Data.prototype;
 
+    Dp.dimension = function(){
+        return this._dimension;
+    };
+
     Dp.name = function(){
        return this._name;
     };
 
-    Dp.ephemeral = function(){
-        return this.ephemeral;
-    };
-
     Dp.dead = function(){
-        return this.dead;
+        return this._dead;
     };
 
     Dp.scope = function(){
-        return this.scope;
+        return this._scope;
     };
 
     Dp.destroy = function(){
 
-        if(this.dead)
+        if(this._dead)
             return;
 
-        var subscriberListsByTopic = this.subscriberListsByTopic;
+        var subscriberListsByTopic = this._subscriberListsByTopic;
         for(var topic in subscriberListsByTopic){
             var list = subscriberListsByTopic[topic];
             list.destroy();
         }
 
-        this.scope = null;
-        this.noTopicSubscriberList = null;
-        this.wildcardSubscriberList = null;
-        this.subscriberListsByTopic = null;
+        this._scope = null;
+        this._noTopicSubscriberList = null;
+        this._wildcardSubscriberList = null;
+        this._subscriberListsByTopic = null;
 
-        this.dead = true;
+        this._dead = true;
 
     };
 
 
-    Dp.demandSubscriberList = function(topic){
+    Dp._demandSubscriberList = function(topic){
 
-        var df = this.subscriberListsByTopic[topic];
+        var df = this._subscriberListsByTopic[topic];
 
         if(df)
             return df;
 
-        return this.subscriberListsByTopic[topic] = new SubscriberList(topic, this);
+        return this._subscriberListsByTopic[topic] = new SubscriberList(topic, this);
+
+    };
+
+    Dp.follow = function(watcher, topic){
+
+        this.subscribe(watcher, topic);
+        var packet = this.peek();
+
+        if(packet)
+            typeof watcher === 'function' ? watcher.call(watcher, packet.msg, packet) : watcher.tell(packet.msg, packet);
+
+        return this;
 
     };
 
     Dp.subscribe = function(watcher, topic){
 
-        if(!topic){
-            this.noTopicSubscriberList.add(watcher);
-        } else {
-            var subscriberList = this.demandSubscriberList(topic);
-            subscriberList.add(watcher);
-        }
+        var subscriberList = (!topic) ? this._noTopicSubscriberList : this._demandSubscriberList(topic);
+        subscriberList.add(watcher);
 
     };
 
     Dp.monitor = function(watcher){
-        this.wildcardSubscriberList.add(watcher);
+
+        this._wildcardSubscriberList.add(watcher);
+
     };
 
 
     Dp.drop = function(watcher, topic){
 
         if(!topic){
-            this.noTopicSubscriberList.remove(watcher);
+            this._noTopicSubscriberList.remove(watcher);
         } else {
-            var subscriberList = this.demandSubscriberList(topic);
+            var subscriberList = this._demandSubscriberList(topic);
             subscriberList.remove(watcher);
         }
-        this.wildcardSubscriberList.remove(watcher);
+        this._wildcardSubscriberList.remove(watcher);
 
     };
 
 
     Dp.peek = function(topic){
 
-
-        var subscriberList = topic ? this.subscriberListsByTopic[topic] : this.noTopicSubscriberList;
+        var subscriberList = topic ? this._subscriberListsByTopic[topic] : this._noTopicSubscriberList;
         if(!subscriberList)
             return null;
         return subscriberList.lastPacket;
@@ -495,16 +624,18 @@
 
     Dp.write = function(msg, topic){
 
-        
+        if(this._readOnly)
+            throw(new Error('Data from a mirror is read-only.'));
+
         if(topic) {
-            var list = this.demandSubscriberList(topic);
+            var list = this._demandSubscriberList(topic);
             list.tell(msg);
         }
         else {
-            this.noTopicSubscriberList.tell(msg);
+            this._noTopicSubscriberList.tell(msg);
         }
         
-        this.wildcardSubscriberList.tell(msg, topic);
+        this._wildcardSubscriberList.tell(msg, topic);
 
     };
 
@@ -517,54 +648,6 @@
     Dp.toggle = function(topic){
         this.write(!this.read(topic), topic);
     };
-
-    // mirrors are read-only data proxies
-
-    var Mirror = function(scope, data){
-
-        scope.assign(this, this.destroy);
-        this.scope = scope;
-        this.readOnly = true;
-        this._name = data.name;
-        this.data = data;
-
-        this.dead = false;
-    };
-
-    var Mp = Mirror.prototype;
-
-    Mp.write = function(){
-        throw(new Error('Data from a mirror is read-only.'));
-    };
-
-    Mp.read = function(topic){
-        return this.data.read(topic);
-    };
-
-    Mp.peek = function(topic){
-        return this.data.peek(topic);
-    };
-
-    Mp.drop = function(watcher, topic){
-        this.data.drop(watcher, topic);
-        return this;
-    };
-
-    Mp.monitor = function(watcher){
-        this.data.monitor(watcher);
-        return this;
-    };
-
-    Mp.subscribe = function(watcher, topic){
-        this.data.subscribe(watcher, topic);
-        return this;
-    };
-
-    Mp.destroy = function(){
-        this.drop();
-        this.data = null;
-    };
-
 
 
     var plugins = typeof seele !== 'undefined' && seele;
