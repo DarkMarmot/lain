@@ -54,7 +54,7 @@ describe('Lain', function(){
 
             var d = world.data('ergo');
             var name = d.name();
-            assert.equal(name, 'ergo2');
+            assert.equal(name, 'ergo');
 
         });
 
@@ -271,6 +271,38 @@ describe('Lain', function(){
 
     });
 
+    it('can write transactions via spray', function(){
+
+        resetLog();
+        world.clear();
+
+        var city1 = world.createChild();
+
+        var d0 = world.data('proxy');
+        var d1 = city1.data('ergo');
+        var d2 = city1.data('autoreiv');
+
+        var result;
+
+        d0.subscribe(function(msg){
+            result = msg;
+            assert(d0.read(), 'grey');
+            assert(d1.read(), 'black');
+            assert(d2.read(), 'chrome');
+        });
+
+        city1.spray([
+            {name: 'proxy', value: 'grey'},
+            {name: 'ergo', value: 'black'},
+            {name: 'autoreiv', value: 'chrome'}
+        ]);
+
+        assert(result, 'grey');
+
+
+    });
+
+
     it('can create actions as ephemeral data', function(){
 
         resetLog();
@@ -421,6 +453,16 @@ describe('Lain', function(){
         assert.equal(f3.read(), 'defaultErgo');
 
 
+        //var up = Catbus.fromEvent('mouseup');
+        //var down = Catbus.fromEvent('mousedown');
+        //var move = Catbus.fromEvent.('mousemove');
+
+        //var drag = up.add(down).merge().transform(dragging).name('dragging');
+        //var render = move.add(drag).merge().group().sync().filter(dragging).batch().render();
+        //
+        //var drag = Catbus.merge(up, down)
+        //var render = Catbus.snap(move, drag).
+        //var render = Catbus.while(dragging).status(move);
         //assert.equal(f1.readOnly, true);
         //
         //var writeToMirror = function(){ f1.write('4');};

@@ -439,6 +439,27 @@
 
     };
 
+    Sp.spray = function(writeArray, dimension){
+
+        var i, w, d;
+        var len = writeArray.length;
+
+        for(i = 0; i < len; i++){
+            w = writeArray[i];
+            w.topic = w.topic || null;
+            d = this.find(w.name, dimension);
+            d.write(w.value, w.topic, true);
+        }
+
+        for(i = 0; i < len; i++){
+            w = writeArray[i];
+            d = this.find(w.name, dimension);
+            d.refresh(w.topic);
+        }
+
+    };
+
+
 
     // holds subscriptions for a topic on a data element
     var SubscriberList = function(topic, data) {
@@ -454,7 +475,7 @@
 
     var Slp = SubscriberList.prototype;
 
-    Slp.tell = function(msg, topic){
+    Slp.tell = function(msg, topic, silently){
 
         if(this._dead) return;
 
@@ -468,12 +489,15 @@
         var subscribers = [].concat(this._subscribers); // call original sensors in case subscriptions change mid loop
         var len = subscribers.length;
 
-        for(var i = 0; i < len; i++){
-            var s = subscribers[i];
-            typeof s === 'function' ? s.call(s, msg, currentPacket) : s.tell(msg, currentPacket);
+        if(!silently) {
+            for (var i = 0; i < len; i++) {
+                var s = subscribers[i];
+                typeof s === 'function' ? s.call(s, msg, currentPacket) : s.tell(msg, currentPacket);
+            }
         }
 
     };
+
 
     Slp.destroy = function(){
 
@@ -621,8 +645,11 @@
 
     };
 
+    Dp.poke = function(msg, topic){
+        this.write(msg, topic, true);
+    };
 
-    Dp.write = function(msg, topic){
+    Dp.write = function(msg, topic, silently){
 
         if(this._readOnly)
             throw(new Error('Data from a mirror is read-only.'));
@@ -632,14 +659,15 @@
             list.tell(msg);
         }
         else {
-            this._noTopicSubscriberList.tell(msg);
+            this._noTopicSubscriberList.tell(msg, null, silently);
         }
         
-        this._wildcardSubscriberList.tell(msg, topic);
+        this._wildcardSubscriberList.tell(msg, topic, silently);
 
     };
 
-    
+
+
     Dp.refresh = function(topic){
         this.write(this.read(topic), topic);
     };
