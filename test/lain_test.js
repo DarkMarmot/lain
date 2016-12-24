@@ -44,9 +44,14 @@ describe('Lain', function(){
 
         before(function(){
 
-            resetLog();
             root.clear();
             world = root.createChild('world');
+
+        });
+
+        afterEach(function(){
+
+            resetLog();
 
         });
 
@@ -95,7 +100,6 @@ describe('Lain', function(){
 
         it('can subscribe to data', function(){
 
-            resetLog();
             var d = world.data('ergo');
             d.subscribe(callback);
             d.write('Re-L');
@@ -106,7 +110,6 @@ describe('Lain', function(){
 
     it('can drop subscriptions to data', function(){
 
-        resetLog();
         var d = world.data('ergo');
         d.subscribe(callback);
         d.write('Re-L');
@@ -120,7 +123,6 @@ describe('Lain', function(){
 
     it('can refresh existing data', function(){
 
-        resetLog();
         world.clear();
         var d = world.data('ergo');
         d.subscribe(callback);
@@ -136,7 +138,6 @@ describe('Lain', function(){
 
         it('can subscribe to topics', function(){
 
-            resetLog();
             world.clear();
             var d = world.data('ergo');
             d.subscribe(callback, 'arcology');
@@ -153,7 +154,6 @@ describe('Lain', function(){
 
     it('can drop subscriptions to topics', function(){
 
-        resetLog();
         world.clear();
         var d = world.data('ergo');
         d.subscribe(callback, 'arcology');
@@ -172,7 +172,6 @@ describe('Lain', function(){
 
     it('can read data by topic', function(){
 
-        resetLog();
         world.clear();
         var d = world.data('ergo');
 
@@ -190,7 +189,6 @@ describe('Lain', function(){
 
     it('can peek at packets by topic', function(){
 
-        resetLog();
         world.clear();
         var d = world.data('ergo');
 
@@ -208,7 +206,6 @@ describe('Lain', function(){
 
         it('can monitor all topics', function(){
 
-            resetLog();
             world.clear();
             var d = world.data('ergo');
             d.monitor(callback);
@@ -227,7 +224,6 @@ describe('Lain', function(){
 
     it('creates child scopes', function(){
 
-        resetLog();
         world.clear();
 
         var city1 = world.createChild();
@@ -249,7 +245,6 @@ describe('Lain', function(){
 
     it('finds data in higher scopes', function(){
 
-        resetLog();
         world.clear();
 
         var city1 = world.createChild();
@@ -305,7 +300,6 @@ describe('Lain', function(){
 
     it('can create actions as ephemeral data', function(){
 
-        resetLog();
         world.clear();
 
         var city1 = world.createChild();
@@ -328,7 +322,6 @@ describe('Lain', function(){
 
     it('valves can restrict data in higher scopes', function(){
 
-        resetLog();
 
         world.clear();
 
@@ -364,7 +357,6 @@ describe('Lain', function(){
 
     it('can mirror data for read-only access', function(){
 
-        resetLog();
         world.clear();
 
         var city1 = world.createChild();
@@ -402,7 +394,6 @@ describe('Lain', function(){
 
     it('can create states for data that is read-only from below', function(){
 
-        resetLog();
         world.clear();
 
         var city1 = world.createChild();
@@ -429,7 +420,6 @@ describe('Lain', function(){
 
     it('can create data in different dimensions', function(){
 
-        resetLog();
         world.clear();
         var city1 = world.createChild();
 
