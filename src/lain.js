@@ -652,7 +652,7 @@
     Dp.write = function(msg, topic, silently){
 
         if(this._readOnly)
-            throw(new Error('Data from a mirror is read-only.'));
+            throw(new Error('Data from a mirror is read-only: ' + this.name()));
 
         if(topic) {
             var list = this._demandSubscriberList(topic);
@@ -661,7 +661,7 @@
         else {
             this._noTopicSubscriberList.tell(msg, null, silently);
         }
-        
+
         this._wildcardSubscriberList.tell(msg, topic, silently);
 
     };
