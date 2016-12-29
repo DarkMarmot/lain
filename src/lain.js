@@ -21,7 +21,7 @@
     "use strict";
 
     var idCounter = 0;
-    var DEFAULT_DIMENSION = 'data';
+    var DEFAULT_DIMENSION = 'default';
 
     var Lain = new Scope('LAIN');
 
@@ -75,7 +75,7 @@
     // it should have a destructor method (by default destroy or dispose will be called)
     // you can specify a method by name (string) or via a reference function
 
-    Sp.reside = function(destructible, method){
+    Sp.kills = function(destructible, method){
 
         if(typeof  destructible !== 'object' && typeof  destructible !== 'function'){
             throw new Error('Scope.reside requires an object with a destroy of dispose method.');
@@ -90,7 +90,7 @@
         }
 
         if(!method || typeof  method !== 'function'){
-            throw new Error('Scope.reside requires an object with a destroy of dispose method.');
+            throw new Error('Scope.kills requires an object with a destroy of dispose method.');
         }
 
         this._destructibles.push(destructible);
@@ -439,23 +439,51 @@
 
     };
 
-    Sp.spray = function(writeArray, dimension){
+    Sp.multiWrite = function(writes, dimension){
 
+        if(typeof writes !== 'object')
+            throw new Error('Scope.multiWrite requires an object or Array containing write values.');
+
+        if(!Array.isArray(writes))
+            return this._multiWriteHash(writes, dimension);
+            
         var i, w, d;
-        var len = writeArray.length;
+        var len = writes.length;
 
         for(i = 0; i < len; i++){
-            w = writeArray[i];
+            w = writes[i];
             w.topic = w.topic || null;
             d = this.find(w.name, dimension);
-            d.write(w.value, w.topic, true);
+            d.silentWrite(w.value, w.topic);
         }
 
         for(i = 0; i < len; i++){
-            w = writeArray[i];
+            w = writes[i];
             d = this.find(w.name, dimension);
             d.refresh(w.topic);
         }
+
+        return this;
+        
+    };
+
+    Sp._multiWriteHash = function(writeHash, dimension){
+
+        var k, v, d;
+        
+        for(k in writeHash){
+            v = writeHash[k];
+            d = this.find(k, dimension);
+            d.write(v, null, true);
+        }
+
+        for(k in writeHash){
+            v = writeHash[k];
+            d = this.find(k, dimension);
+            d.refresh();
+        }
+        
+        return this;
 
     };
 
@@ -526,7 +554,7 @@
 
     var Data = function(scope, name, dimension) {
 
-        scope.reside(this, this.destroy);
+        scope.kills(this, this.destroy);
         this._dimension = dimension;
         this._scope = scope;
         this._writeOnly = false;
@@ -590,6 +618,7 @@
 
     };
 
+
     Dp.follow = function(watcher, topic){
 
         this.subscribe(watcher, topic);
@@ -602,12 +631,14 @@
 
     };
 
+
     Dp.subscribe = function(watcher, topic){
 
         var subscriberList = (!topic) ? this._noTopicSubscriberList : this._demandSubscriberList(topic);
         subscriberList.add(watcher);
 
     };
+
 
     Dp.monitor = function(watcher){
 
@@ -638,6 +669,7 @@
 
     };
 
+
     Dp.read = function(topic) {
 
         var packet = this.peek(topic);
@@ -645,9 +677,11 @@
 
     };
 
-    Dp.poke = function(msg, topic){
+
+    Dp.silentWrite = function(msg, topic){
         this.write(msg, topic, true);
     };
+
 
     Dp.write = function(msg, topic, silently){
 
@@ -665,7 +699,6 @@
         this._wildcardSubscriberList.tell(msg, topic, silently);
 
     };
-
 
 
     Dp.refresh = function(topic){

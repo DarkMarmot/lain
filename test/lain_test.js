@@ -266,7 +266,7 @@ describe('Lain', function(){
 
     });
 
-    it('can write transactions via spray', function(){
+    it('can write transactions via multiWrite', function(){
 
         resetLog();
         world.clear();
@@ -286,7 +286,7 @@ describe('Lain', function(){
             assert(d2.read(), 'chrome');
         });
 
-        city1.spray([
+        city1.multiWrite([
             {name: 'proxy', value: 'grey'},
             {name: 'ergo', value: 'black'},
             {name: 'autoreiv', value: 'chrome'}
@@ -386,9 +386,7 @@ describe('Lain', function(){
 
         var writeToMirror = function(){ f2.write('4'); };
 
-        // 'bad error msg' isn't being printed for some reason
-        // figure mocha is swallowing it
-        assert.throws(writeToMirror, /Data from a mirror .* ergo/, 'bad error msg');
+        assert.throws(writeToMirror, /Data from a mirror .* ergo/);
 
     });
 
