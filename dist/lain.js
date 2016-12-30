@@ -1,9 +1,3 @@
-(function (global, factory) {
-   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-   typeof define === 'function' && define.amd ? define(factory) :
-   (global.lain = factory());
-}(this, (function () { 'use strict';
-
 /**
  * lain.js (v1.0.0) --
  *
@@ -713,6 +707,4 @@ Dp.toggle = function(topic){
     this.write(!this.read(topic), topic);
 };
 
-return Lain;
-
-})));
+export default Lain;
