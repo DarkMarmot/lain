@@ -1,7 +1,7 @@
 //run mocha from project root
 
 var assert = require('assert');
-var Lain = require('../src/lain.js');
+var Lain = require('../dist/lain.js');
 
 var root = Lain;
 

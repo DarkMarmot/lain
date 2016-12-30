@@ -2,7 +2,9 @@
   "name": "lain",
   "version": "2.0.0",
   "description": "the pubsub datastore of nested scopes in the wired",
-  "main": "dist/lain.js",
+  "main": "dist/lain.umd.js",
+  "module": "dist/lain.es.js",
+  "jsnext:main": "dist/lain.es.js",
   "directories": {
     "test": "test"
   },
@@ -30,6 +32,8 @@
   },
   "homepage": "https://github.com/DarkMarmot/lain",
   "devDependencies": {
-    "mocha": "^3.2.0"
+    "mocha": "^3.2.0",
+    "rollup": "^0.39.2",
+    "rollup-plugin-node-resolve": "^2.0.0"
   }
 }
