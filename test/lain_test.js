@@ -266,6 +266,31 @@ describe('Lain', function(){
 
     });
 
+    it('can insert a scope', function(){
+
+        world.clear();
+
+        var region = world.createChild();
+        var city1 = world.createChild();
+
+        city1.insertParent(region);
+
+        var d0 = world.data('ergo');
+        var d1 = region.data('ergo');
+        var d2 = city1.data('proxy');
+
+        d0.write('0');
+        d1.write('1');
+        d2.write('2');
+
+        var f1 = region.find('ergo');
+        var f2 = city1.find('ergo');
+
+        assert.equal(f1.read(), '1');
+        assert.equal(f2.read(), '1');
+
+    });
+
     it('can write transactions via multiWrite', function(){
 
         resetLog();
