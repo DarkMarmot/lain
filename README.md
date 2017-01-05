@@ -173,7 +173,7 @@ buttonScope.find('mixture'); // returns `null` due to the valves in `pageScope`
 
 ```
 
-To create parallel hierarchies of data with the same inherent structure but different access properties (useful for separating things like source file information, styles, api methods, etc.), scopes can declare that `Data`` elements reside in a specific dimension (like a namespace of sorts). Valves can be defined separately for each dimension.
+To create parallel hierarchies of data with the same inherent structure but different access properties (useful for separating things like source file information, styles, api methods, etc.), scopes can declare that `Data` elements reside in a specific dimension (like a namespace of sorts). Valves can be defined separately for each dimension.
 
 ```javascript
 
